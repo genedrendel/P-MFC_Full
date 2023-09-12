@@ -36,11 +36,20 @@ BiocManager::install("phyloseq")
 BiocManager::valid()
 
 # Working Directory -------------------------------------------------------
-#Set your working directory, location for data tables, tree, etc
-setwd("~/Documents/University/Analysis/PMFC_15_Rerun_2023/Output/For R")
 
+#Working on a new strategy now to streamline figures/stats between taxa + faprotax + picrust
+#By sequestering each of the taxa/fapro/picrust data sheets in their own folders they can all be named the same "tax_table " raw_readmap" etc
+#And because any comparisons we make with one set we will liukely want to do with the others too  we can just switch working directories instead of duplicating essentially the same code
+
+#one further note, once I get to ancombc, let's also use this strategy plus the level setting argument to fix up and remove the need for an "alternative import" for running ancom with the desired factor ordering
+
+#Set your working directory, location for data tables, tree, etc
+#Taxa
+setwd("~/Documents/University/Analysis/PMFC_18_TimeSeries")
 #picrust working directory (for quick import for picrust without needing to make its own section for now)
-setwd("~/Documents/University/Analysis/PMFC_15_Rerun_2023/Output/For R/picrust import sheets")
+setwd("~/Documents/University/Analysis/PMFC_18_TimeSeries/PICRUST/Path")
+#faprotax working directory
+setwd("~/Documents/University/Analysis/PMFC_18_TimeSeries/FAPROTax")
 
 #Quick import all to skip the below
 library(phyloseq)
@@ -48,6 +57,7 @@ library(ape)
 library(magrittr)
 library(ggplot2)
 
+#regular import for taxa plus tree
 otu_table <- as.data.frame(read.csv("raw_readmap.csv", header = TRUE,row.names = "OTU_ID"))
 taxmat <- as.matrix(read.csv("tax_table.csv", row.names = 1, header = TRUE))
 treat <- as.data.frame(read.csv("mapping_file.csv", row.names = 1, header = TRUE))
@@ -57,110 +67,14 @@ TAX = tax_table(taxmat)
 TREAT = sample_data(treat)
 OBJ1 = phyloseq(OTU,TAX,TREAT,TREE)
 
-library(magrittr)
-OBJ1 <- OBJ1 %>%
-  subset_taxa(
-    Kingdom == "Bacteria" &
-    Family  != "mitochondria" &
-    Class   != "Chloroplast"
-  )
-
-
-
-# New 2015 adapted analysis sections --------------------------------------
-
-
-############New Section for 2015 step by step as they're done - old sections will be kept below this section for reference to older script 
-
-#### For 2015 data:
-#First lets have a look at three versions, 
-#an overall one, a plant only subset, and an unplanted only subset. 
-#Do some alhpa div and beta div  for each
-
-
-
-## Subsetting and TSS for 2015 data --------------------------------------
-
-
-OBJ1_exp_tss = transform_sample_counts(OBJ1, function(OTU) OTU/sum(OTU) )
-
-OBJ_Plant <- subset_samples(OBJ1, group == "Planted")
-OBJ_NoPlant <- subset_samples(OBJ1, group == "Unplanted")
-#NOTE for below line, do NOT confuse this with subsetting out only planted and connected samples
-#This subset is actually for: seubsetting out both sets of uninoculated samples, i.e is for comparing connected with unconnected
-OBJ_PlantConnectionOnly <- subset_samples(OBJ1, plant_connection == "yes")
-
-OBJ_Plant_tss <- subset_samples(OBJ1_exp_tss, group == "Planted")
-OBJ_NoPlant_tss <- subset_samples(OBJ1_exp_tss, group == "Unplanted")
-OBJ_PlantConnectionOnly_tss <- subset_samples(OBJ1_exp_tss, plant_connection == "yes")
-
-# subset out only ocnnect3ed treatments (with plants)
-#Must subset out only ocnnected samples..
-OBJ_W10_conn <- subset_samples(OBJ1, connection == "Connected")
-OBJ_W10_conn_planted <- subset_samples(OBJ_W10_conn, group == "Planted")
-#TSS versions for planted only, and connected only:
-OBJ_W10_conn_tss <- subset_samples(OBJ1_exp_tss, connection == "Connected")
-OBJ_W10_conn_planted_tss <- subset_samples(OBJ_W10_conn_tss, group == "Planted")
-
-#not neccessary for ancom? but also could be useful to have to look at the same subest using other tools to compare iwth ancom later
-OBJ_W10_conn_FAM <- tax_glom(OBJ_W10_conn_planted,taxrank = "Family")
-OBJ_W10_conn_FAM_tss <- tax_glom(OBJ_W10_conn_planted_tss,taxrank = "Family")
-
-
-#Main Functional object  outputs from this and initial import:
-OBJ1 #raw import, overall data
-OBJ1_exp_tss #tss, overall data
-OBJ_Plant #plants only, no transform
-OBJ_NoPlant #unplanted only, no transform
-OBJ_Plant_tss #plants only, TSS'd
-OBJ_NoPlant_tss #unplanted only, TSS'd
-OBJ_PlantConnectionOnly # just uninoculated connecteion test
-OBJ_PlantConnectionOnly_tss # just uninoculated connecteion test tss
-
-#Agglomerating to diff taxonomic levels
-#Overall, no transform
-OBJ_W10_ORD <- tax_glom(OBJ1,taxrank = "Order")
-OBJ_W10_FAM <- tax_glom(OBJ1,taxrank = "Family")
-OBJ_W10_GEN <- tax_glom(OBJ1,taxrank = "Genus")
-#Overall, TSS
-OBJ_W10_ORD_tss <- tax_glom(OBJ1_exp_tss,taxrank = "Order")
-OBJ_W10_FAM_tss <- tax_glom(OBJ1_exp_tss,taxrank = "Family")
-OBJ_W10_GEN_tss <- tax_glom(OBJ1_exp_tss,taxrank = "Genus")
-#Plant Only, no transform
-OBJ_PlantOnly_ORD <- tax_glom(OBJ_Plant,taxrank = "Order")
-OBJ_PlantOnly_FAM <- tax_glom(OBJ_Plant,taxrank = "Family")
-OBJ_PlantOnly_GEN <- tax_glom(OBJ_Plant,taxrank = "Genus")
-#Plant Only, TSS
-OBJ_PlantOnly_ORD_tss <- tax_glom(OBJ_Plant_tss,taxrank = "Order")
-OBJ_PlantOnly_FAM_tss <- tax_glom(OBJ_Plant_tss,taxrank = "Family")
-OBJ_PlantOnly_GEN_tss <- tax_glom(OBJ_Plant_tss,taxrank = "Genus")
-
-
-##### ###ANCOMBC import (alt) -------------------------------------------------
-## Import for ancombc (only difference is that the phylo object is created pointing to a different mapping file alphabetised so that uninlculated treatment is used as baseline)
-
-#Note use of different tax sheet with levels above family concatenated within the family column
-
-setwd("~/Documents/University/Analysis/PMFC_15_Rerun_2023/Output/For R")
-
-
-#picrust working directory (for quick import without needing to make its own section for now)
-setwd("~/Documents/University/Analysis/PMFC_15_Rerun_2023/Output/For R/picrust import sheets")
-
-#Quick import all to skip the below
-library(phyloseq)
-library(ape)
-library(magrittr)
-library(ggplot2)
-
+#non tree import for picrust / faprotax
 otu_table <- as.data.frame(read.csv("raw_readmap.csv", header = TRUE,row.names = "OTU_ID"))
-taxmat <- as.matrix(read.csv("tax_table_CONC.csv", row.names = 1, header = TRUE))
-treat <- as.data.frame(read.csv("mapping_file_ancom-ordering.csv", row.names = 1, header = TRUE))
-TREE <- read.tree("rooted_tree.nwk")
+taxmat <- as.matrix(read.csv("tax_table.csv", row.names = 1, header = TRUE))
+treat <- as.data.frame(read.csv("mapping_file.csv", row.names = 1, header = TRUE))
 OTU = otu_table(otu_table, taxa_are_rows = TRUE)
 TAX = tax_table(taxmat)
 TREAT = sample_data(treat)
-OBJ1 = phyloseq(OTU,TAX,TREAT,TREE)
+OBJ1 = phyloseq(OTU,TAX,TREAT)
 
 library(magrittr)
 OBJ1 <- OBJ1 %>%
@@ -170,9 +84,111 @@ OBJ1 <- OBJ1 %>%
     Class   != "Chloroplast"
   )
 
+# Newer analysis sections, re-adapting from 2015 to full time series dataset --------------------------------------
+
+#### old sections will be kept below this section for reference to older script/s
+
+#To reduce need for needlessly agglomerating to genus/family etc for individual subsets, perform it once here if it will be needed and perform all following steps at that level
+#Agglomerating to diff taxonomic levels
+#Overall, no transform
+OBJ1 <- tax_glom(OBJ1,taxrank = "Order")
+#approx 10 minutes for Family level
+OBJ1 <- tax_glom(OBJ1,taxrank = "Family")
+OBJ1 <- tax_glom(OBJ1,taxrank = "Genus")
 
 
-##### Table export for agglomerated sheets ------------------------------------
+## Subsetting and TSS --------------------------------------
+OBJ1_exp <- subset_samples(OBJ1, Experiment == "Y")
+OBJ1_exp_tss = transform_sample_counts(OBJ1_exp, function(OTU) OTU/sum(OTU) )
+
+#Couple extra notes: re: subsetting for this particular dataset....remmermber to swap in/out the taxa sheet if intending to run ancombc2
+#Due to the way it handles taxa levels/names now.
+#Similarly, when using the concatenated sheet for ancom, don't worry about agglomerating because it can be set at family level itself
+
+#As such, need to be. alittle more careful than usual when importing/subsetting to ensure correct things are being run
+
+##To reduce need for subsequent subsetting, do overall treatment subsets ONCE now, and then subset by time for each of those plus once for an overall  (as opposed to subsetting weeks out and then having to also do each time point treatments individually)
+#Electrode only subset (because plants only at end point)
+OBJ1_exp_el <- subset_samples(OBJ1_exp, Electrode_Subset == "Yes")
+OBJ1_exp_eltss <- subset_samples(OBJ1_exp_tss, Electrode_Subset == "Yes")
+
+OBJ1_expCONN <- subset_samples(OBJ1_exp_el, Connection == "Connected")
+OBJ1_expCONNtss <- subset_samples(OBJ1_exp_eltss, Connection == "Connected")
+
+OBJ1_expUNCON <- subset_samples(OBJ1_exp_el, Connection == "Unconnected")
+OBJ1_expUNCONtss <- subset_samples(OBJ1_exp_eltss, Connection == "Unconnected")
+
+OBJ1_expANO <- subset_samples(OBJ1_exp_el, Location == "Anode")
+OBJ1_expANOtss <- subset_samples(OBJ1_exp_eltss, Location == "Anode")
+
+OBJ1_expCATH <- subset_samples(OBJ1_exp_el, Location == "Cathode")
+OBJ1_expCATHtss <- subset_samples(OBJ1_exp_eltss, Location == "Cathode")
+
+OBJ1_expSOIL <- subset_samples(OBJ1_exp_el, Substrate == "Soil")
+OBJ1_expSOILtss <- subset_samples(OBJ1_exp_eltss, Substrate == "Soil")
+
+OBJ1_expWAT <- subset_samples(OBJ1_exp_eltss, Substrate == "Water")
+OBJ1_expWATtss <- subset_samples(OBJ1_exp_eltss, Substrate == "Water")
+
+OBJ1_expUNIN <- subset_samples(OBJ1_exp_el, Inoculum == "Uninoculated")
+OBJ1_expUNINtss <- subset_samples(OBJ1_exp_el, Inoculum == "Uninoculated")
+
+OBJ1_expGEO <- subset_samples(OBJ1_exp_el, Inoculum == "Geobacter")
+OBJ1_expGEOtss <- subset_samples(OBJ1_exp_el, Inoculum == "Geobacter")
+
+OBJ1_expPSEU <- subset_samples(OBJ1_exp_el, Inoculum == "Pseudomonas")
+OBJ1_expPSEUtss <- subset_samples(OBJ1_exp_el, Inoculum == "Pseudomonas")
+
+OBJ1_expMONT <- subset_samples(OBJ1_exp_el, Inoculum == "Montebello")
+OBJ1_expMONTtss <- subset_samples(OBJ1_exp_el, Inoculum == "Montebello")
+
+#Subset by time including all treatments
+OBJ_W0 <- subset_samples(OBJ1_exp_el, Week == "Zero")
+OBJ_W0_tss <- subset_samples(OBJ1_exp_eltss, Week == "Zero")
+OBJ_W6 <- subset_samples(OBJ1_exp_el, Week == "Six")
+OBJ_W6_tss <- subset_samples(OBJ1_exp_eltss, Week == "Six")
+OBJ_W8 <- subset_samples(OBJ1_exp_el, Week == "Eight")
+OBJ_W8_tss <- subset_samples(OBJ1_exp_eltss, Week == "Eight")
+OBJ_W14 <- subset_samples(OBJ1_exp_el, Week == "Fourteen")
+OBJ_W14_tss <- subset_samples(OBJ1_exp_eltss, Week == "Fourteen")
+
+#Subset by connection state over time
+OBJ_W0_CONN <- subset_samples(OBJ1_expCONN, Week == "Zero")
+OBJ_W0_CONNtss <- subset_samples(OBJ1_expCONNtss, Week == "Zero")
+OBJ_W6_CONN <- subset_samples(OBJ1_expCONN, Week == "Six")
+OBJ_W6_CONNtss <- subset_samples(OBJ1_expCONNtss, Week == "Six")
+OBJ_W8_CONN <- subset_samples(OBJ1_expCONN, Week == "Eight")
+OBJ_W8_CONNtss <- subset_samples(OBJ1_expCONNtss, Week == "Eight")
+OBJ_W14CONN <- subset_samples(OBJ1_expCONN, Week == "Fourteen")
+OBJ_W14_CONNtss <- subset_samples(OBJ1_expCONNtss, Week == "Fourteen")
+
+#Subset by location over time
+#Re: location, worth doing one of just electrodes as per above, and then just use the regular non-subsset week14 for one including plant roots
+
+OBJ1_W14_All <- subset_samples(OBJ1_exp, Week == "Fourteen")
+
+#Anode over time
+OBJ_W0_ANO <- subset_samples(OBJ1_expANO, Week == "Zero")
+OBJ_W0_ANOtss <- subset_samples(OBJ1_expANOtss, Week == "Zero")
+OBJ_W6ANO <- subset_samples(OBJ1_expANO, Week == "Six")
+OBJ_W6_ANOtss <- subset_samples(OBJ1_expANOtss, Week == "Six")
+OBJ_W8ANO <- subset_samples(OBJ1_expANO, Week == "Eight")
+OBJ_W8_ANOtss <- subset_samples(OBJ1_expANOtss, Week == "Eight")
+OBJ_W14ANO <- subset_samples(OBJ1_expANO, Week == "Fourteen")
+OBJ_W14_ANOtss <- subset_samples(OBJ1_expANOtss, Week == "Fourteen")
+
+#Cathode over time
+OBJ_W0CATH <- subset_samples(OBJ1_expCATH, Week == "Zero")
+OBJ_W0_CATHtss <- subset_samples(OBJ1_expCATHtss, Week == "Zero")
+OBJ_W6CATH <- subset_samples(OBJ1_expCATH, Week == "Six")
+OBJ_W6_CATHtss <- subset_samples(OBJ1_expCATHtss, Week == "Six")
+OBJ_W8CATH <- subset_samples(OBJ1_expCATH, Week == "Eight")
+OBJ_W8_CATHtss <- subset_samples(OBJ1_expCATHtss, Week == "Eight")
+OBJ_W14CATH <- subset_samples(OBJ1_expCATH, Week == "Fourteen")
+OBJ_W14_CATHtss <- subset_samples(OBJ1_expCATHtss, Week == "Fourteen")
+
+
+##### Table export for agglomerated sheets (i.e if certain taxa level sheets are needed for excel/other programs) ------------------------------------
 
 ##Agglomerate and then export
 #family (if not already done as per above)
@@ -204,33 +220,22 @@ library(knitr)
 tab <- microbiome::alpha(OBJ1, index = "all")
 kable(head(tab))
 
-plot_richness(OBJ1, x = "group", measures = c("Observed", "Shannon")) +
+plot_richness(OBJ1_exp_el, x = "Week", measures = c("Observed", "Shannon")) +
   geom_boxplot() +
   theme_classic() +
   theme(strip.background = element_blank(), axis.text.x.bottom = element_text(angle = -90))
 
-plot_richness(OBJ1, x = "inoculum", measures = c("Observed", "Shannon")) +
-  geom_boxplot() +
-  theme_classic() +
-  theme(strip.background = element_blank(), axis.text.x.bottom = element_text(angle = -90))
-
-plot_richness(OBJ1, x = "group", measures = c("Observed", "Shannon")) +
-  geom_boxplot() +
-  theme_classic() +
-  theme(strip.background = element_blank(), axis.text.x.bottom = element_text(angle = -90))
-
-
-estimate_richness(OBJ1, split = TRUE, measures = NULL)
-estimate_richness(OBJ1, split = FALSE, measures = NULL)
+estimate_richness(OBJ1_exp_el, split = TRUE, measures = NULL)
+estimate_richness(OBJ1_exp_el, split = FALSE, measures = NULL)
 
 #Overall 
-a <- plot_richness(OBJ1, x = "group")# measures=c("Simpson","Chao1", "Shannon"))#+ theme_bw()
+a <- plot_richness(OBJ1_exp_el, x = "group")# measures=c("Simpson","Chao1", "Shannon"))#+ theme_bw()
 a
 
-b <- plot_richness(OBJ1, x = "inoculum")# measures=c("Simpson","Chao1", "Shannon"))#+ theme_bw()
+b <- plot_richness(OBJ1_exp_el, x = "inoculum")# measures=c("Simpson","Chao1", "Shannon"))#+ theme_bw()
 b
 
-c <- plot_richness(OBJ1, x = "treatment")# measures=c("Simpson","Chao1", "Shannon"))#+ theme_bw()
+c <- plot_richness(OBJ1_exp_el, x = "treatment")# measures=c("Simpson","Chao1", "Shannon"))#+ theme_bw()
 c
 
 #Plant Only
@@ -338,329 +343,304 @@ p.simpson
 
 
 ###### nMDS --------------------------------------------------------------------
+#remember to specify tss datasets
+# Overall - all time points, only cutting out plants (because only wk14)
+NMDS_All_W <- ordinate(OBJ1_exp_eltss, "NMDS", distance = "unifrac", weighted = TRUE, parallel = TRUE)
+NMDS_All_W
 
+NMDS_All_U <- ordinate(OBJ1_exp_eltss, "NMDS", distance = "unifrac", weighted = FALSE, parallel = TRUE)
+NMDS_All_U
 
-#### 
+#Individual time points
+#Week 0
+NMDS_W0_W <- ordinate(OBJ_W0_tss, "NMDS", distance = "unifrac", weighted = TRUE, parallel = TRUE)
+NMDS_W0_W
 
-# Overall
-# Week 10 weighted TSS (ASV)
-NMDS_W10_W <- ordinate(OBJ1_exp_tss, "NMDS", distance = "unifrac", weighted = TRUE, parallel = TRUE)
-NMDS_W10_W
+NMDS_W0_U <- ordinate(OBJ_W0_tss, "NMDS", distance = "unifrac", weighted = FALSE, parallel = TRUE)
+NMDS_W0_U
 
-# Week 10 weighted TSS (FAMILY)
-NMDS_W10_W_FAM <- ordinate(OBJ_W10_FAM_tss, "NMDS", distance = "unifrac", weighted = TRUE, parallel = TRUE)
-NMDS_W10_W_FAM
+#Week 6
+NMDS_W6_W <- ordinate(OBJ_W6_tss, "NMDS", distance = "unifrac", weighted = TRUE, parallel = TRUE)
+NMDS_W6_W
 
-# Week 10 unweighted TSS (ASV)
-NMDS_W10_U <- ordinate(OBJ1_exp_tss, "NMDS", distance = "unifrac", weighted = FALSE, parallel = TRUE)
-NMDS_W10_U
+NMDS_W6_U <- ordinate(OBJ_W6_tss, "NMDS", distance = "unifrac", weighted = FALSE, parallel = TRUE)
+NMDS_W6_U
 
-# Week 10 unweighted TSS (FAMILY)
-NMDS_W10_U_FAM <- ordinate(OBJ_W10_FAM_tss, "NMDS", distance = "unifrac", weighted = FALSE, parallel = TRUE)
-NMDS_W10_U_FAM
+#Week 8
+NMDS_W8_W <- ordinate(OBJ_W8_tss, "NMDS", distance = "unifrac", weighted = TRUE, parallel = TRUE)
+NMDS_W8_W
 
+NMDS_W8_U <- ordinate(OBJ_W8_tss, "NMDS", distance = "unifrac", weighted = FALSE, parallel = TRUE)
+NMDS_W8_U
 
+#Week 14
+NMDS_W14_W <- ordinate(OBJ_W14_tss, "NMDS", distance = "unifrac", weighted = TRUE, parallel = TRUE)
+NMDS_W14_W
 
-# Planted only
-# Week 10 weighted TSS (ASV)
-NMDS_W10_Plant_W <- ordinate(OBJ_Plant_tss, "NMDS", distance = "unifrac", weighted = TRUE, parallel = TRUE)
-NMDS_W10_Plant_W
+NMDS_W14_U <- ordinate(OBJ_W14_tss, "NMDS", distance = "unifrac", weighted = FALSE, parallel = TRUE)
+NMDS_W14_U
 
-# Week 10 weighted TSS (FAMILY)
-NMDS_W10_Plant_W_FAM <- ordinate(OBJ_PlantOnly_FAM_tss, "NMDS", distance = "unifrac", weighted = TRUE, parallel = TRUE)
-NMDS_W10_Plant_W_FAM
+#Connected
+NMDS_CONN_W <- ordinate(OBJ1_expCONNtss, "NMDS", distance = "unifrac", weighted = TRUE, parallel = TRUE)
+NMDS_CONN_W
 
-# Week 10 unweighted TSS (ASV)
-NMDS_W10_Plant_U <- ordinate(OBJ_Plant_tss, "NMDS", distance = "unifrac", weighted = FALSE, parallel = TRUE)
-NMDS_W10_Plant_U
+NMDS_CONN_U <- ordinate(OBJ1_expCONNtss, "NMDS", distance = "unifrac", weighted = FALSE, parallel = TRUE)
+NMDS_CONN_U
 
-# Week 10 unweighted TSS (FAMILY)
-NMDS_W10_Plant_U_FAM <- ordinate(OBJ_PlantOnly_FAM_tss, "NMDS", distance = "unifrac", weighted = FALSE, parallel = TRUE)
-NMDS_W10_Plant_U_FAM
+#Unconnected
+NMDS_UNCONN_W <- ordinate(OBJ1_expUNCONtss, "NMDS", distance = "unifrac", weighted = TRUE, parallel = TRUE)
+NMDS_UNCONN_W
 
-#Planted only + connected only (i..e subseeting to remove unninoculated&unconnected reps)
-NMDS_plantconnonly_FAM <- ordinate(OBJ_W10_conn_FAM_tss, "NMDS", distance = "unifrac", weighted = TRUE, parallel = TRUE)
-NMDS_plantconnonly_FAM
+NMDS_UNCONN_U <- ordinate(OBJ1_expUNCONtss, "NMDS", distance = "unifrac", weighted = FALSE, parallel = TRUE)
+NMDS_UNCONN_U
 
-# Unplanted Only
-# Week 10 weighted TSS (ASV)
-NMDS_W10_NoPlant_W <- ordinate(OBJ_NoPlant_tss, "NMDS", distance = "unifrac", weighted = TRUE, parallel = TRUE)
-NMDS_W10_NoPlant_W
+#Anode only
+NMDS_ANODE_W <- ordinate(OBJ1_expANOtss, "NMDS", distance = "unifrac", weighted = TRUE, parallel = TRUE)
+NMDS_ANODE_W
 
-# Week 10 unweighted TSS (ASV)
-NMDS_W10_NoPlant_U <- ordinate(OBJ_NoPlant_tss, "NMDS", distance = "unifrac", weighted = FALSE, parallel = TRUE)
-NMDS_W10_NoPlant_U
+NMDS_ANODE_U <- ordinate(OBJ1_expANOtss, "NMDS", distance = "unifrac", weighted = FALSE, parallel = TRUE)
+NMDS_ANODE_U
+#Cathode only
+NMDS_ANODE_W <- ordinate(OBJ1_expCATHtss, "NMDS", distance = "unifrac", weighted = TRUE, parallel = TRUE)
+NMDS_ANODE_W
 
-
-#Note fix the subset for this tomorrow**********
-#Need to make another TSS subset of only connected and only planted....alsocan now remove the old ancomb import
-#Unplanted and connected only
-#Weighted
-NMDS_W10_NoPlant_W <- ordinate(OBJ_NoPlant_tss, "NMDS", distance = "unifrac", weighted = TRUE, parallel = TRUE)
-NMDS_W10_NoPlant_W
-
-#Unweighted
-NMDS_W10_NoPlant_U <- ordinate(OBJ_NoPlant_tss, "NMDS", distance = "unifrac", weighted = FALSE, parallel = TRUE)
-NMDS_W10_NoPlant_U
+NMDS_CATH_U <- ordinate(OBJ1_expCATHtss, "NMDS", distance = "unifrac", weighted = FALSE, parallel = TRUE)
+NMDS_CATH_U
 
 ############ Plot Ordinations --------------------------------------------------------
 
-
-### 
-
-#W10 2015 data, start ordinations
-#OVerall
-#Weighted -
-W10_OverallOrd_W <- plot_ordination(OBJ1_exp_tss, NMDS_W10_W, color = "inoculum", shape = "group", label = NULL)
-W10_OverallOrd_W <- plot_ordination(OBJ1_exp_tss, NMDS_W10_W, color = "treatment", shape = "group", label = NULL)
-W10_OverallOrd_W
-W10_OverallOrd_W + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
-
-W10_OverallOrd_W_fam <- plot_ordination(OBJ_W10_FAM_tss, NMDS_W10_W_FAM, color = "inoculum", shape = "group", label = NULL)
-W10_OverallOrd_W_fam <- plot_ordination(OBJ_W10_FAM_tss, NMDS_W10_W_FAM, color = "treatment", shape = "group", label = NULL)
-W10_OverallOrd_W_fam
-W10_OverallOrd_W_fam + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
-
-
-
-#Unweighted
-W10_OverallOrd_U <- plot_ordination(OBJ1_exp_tss, NMDS_W10_U, color = "inoculum", shape = "group", label = NULL)
-W10_OverallOrd_U <- plot_ordination(OBJ1_exp_tss, NMDS_W10_U, color = "treatment", shape = "group", label = NULL)
-W10_OverallOrd_U
-W10_OverallOrd_U + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
-
-W10_OverallOrd_U_fam <- plot_ordination(OBJ_W10_FAM_tss, NMDS_W10_U_FAM, color = "inoculum", shape = "group", label = NULL)
-W10_OverallOrd_U_fam <- plot_ordination(OBJ_W10_FAM_tss, NMDS_W10_U_FAM, color = "treatment", shape = "group", label = NULL)
-W10_OverallOrd_U_fam
-W10_OverallOrd_U_fam + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
-
-
-#Planted only
-#Weighted
-W10_PlantOrd_W <- plot_ordination(OBJ_Plant_tss, NMDS_W10_Plant_W, color = "inoculum", shape = "connection", label = NULL)
-W10_PlantOrd_W <- plot_ordination(OBJ_Plant_tss, NMDS_W10_Plant_W, color = "treatment", shape = "connection", label = NULL)
-W10_PlantOrd_W
-W10_PlantOrd_W + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
-
-W10_PlantOrd_W_fam <- plot_ordination(OBJ_PlantOnly_FAM_tss, NMDS_W10_Plant_W_FAM, color = "inoculum", shape = "connection", label = NULL)
-W10_PlantOrd_W_fam <- plot_ordination(OBJ_PlantOnly_FAM_tss, NMDS_W10_Plant_W_FAM, color = "treatment", shape = "connection", label = NULL)
-W10_PlantOrd_W_fam
-W10_PlantOrd_W_fam + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
-
-#Plant connected subset only
-W10_PlantOrd_W_fam <- plot_ordination(OBJ_W10_conn_FAM_tss, NMDS_plantconnonly_FAM, color = "inoculum", shape = "connection", label = NULL)
-W10_PlantOrd_W_fam <- plot_ordination(OBJ_W10_conn_FAM_tss, NMDS_plantconnonly_FAM, color = "treatment", shape = "connection", label = NULL)
-W10_PlantOrd_W_fam
-W10_PlantOrd_W_fam + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
-
-
-#Unweighted
-W10_PlantOrd_U <- plot_ordination(OBJ_Plant_tss, NMDS_W10_Plant_U, color = "inoculum", shape = "connection", label = NULL)
-W10_PlantOrd_U <- plot_ordination(OBJ_Plant_tss, NMDS_W10_Plant_U, color = "treatment", shape = "connection", label = NULL)
-W10_PlantOrd_U
-W10_PlantOrd_U + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
-
-W10_PlantOrd_U_fam <- plot_ordination(OBJ_PlantOnly_FAM_tss, NMDS_W10_Plant_U_FAM, color = "inoculum", shape = "connection", label = NULL)
-W10_PlantOrd_U_fam <- plot_ordination(OBJ_PlantOnly_FAM_tss, NMDS_W10_Plant_U_FAM, color = "treatment", shape = "connection", label = NULL)
-W10_PlantOrd_U_fam
-W10_PlantOrd_U_fam + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
-
-
-#Prep for ANOSIM / PERMANOVA Variables
-#First pull the variables for overall that you want to test into objects:
-#By plant
-PlantAll <- get_variable(OBJ1_exp_tss, "group")
-#By connection 
-ConnectionAll <- get_variable(OBJ1_exp_tss, "connection")
-#By Inoculum 
-InoculumAll <- get_variable(OBJ1_exp_tss, "inoculum")
-
-
-
-## Run ANOSIM on
-#ANOSIM for 2015 data
-
 #Overall
-#Plant Weighted
-W10_PlantAll_ano_w <- anosim(distance(OBJ1_exp_tss, "wunifrac"), PlantAll)
-W10_PlantAll_ano_w
+#Weighted -
+OverallOrd_W <- plot_ordination(OBJ1_exp_eltss, NMDS_All_W, color = "Treatment", shape = "Week", label = NULL)
+OverallOrd_W
+OverallOrd_W + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
 
-#Plant Unweighted
-W10_PlantAll_ano_u <- anosim(distance(OBJ1_exp_tss, "unifrac"), PlantAll)
-W10_PlantAll_ano_u
+#Unweighted
+OverallOrd_U <- plot_ordination(OBJ1_exp_eltss, NMDS_All_U, color = "Treatment", shape = "Week", label = NULL)
+OverallOrd_U
+OverallOrd_U + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
 
-#Plant Weighted (FAMILY)
-W10_PlantAll_ano_w <- anosim(distance(OBJ_W10_FAM_tss, "wunifrac"), PlantAll)
-W10_PlantAll_ano_w
+#By week
 
-#Plant Unweighted (FAMILY)
-W10_PlantAll_ano_u <- anosim(distance(OBJ_W10_FAM_tss, "unifrac"), PlantAll)
-W10_PlantAll_ano_u
+# Week 0 weighted
+Week0_Ord_W <- plot_ordination(OBJ_W0_tss, NMDS_W0_W, color = "Treatment", shape = "Week", label = NULL)
+Week0_Ord_W
+Week0_Ord_W + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
 
-#Inoculum Weighted
-W10_PlantAll_ano_w <- anosim(distance(OBJ1_exp_tss, "wunifrac"), InoculumAll)
-W10_PlantAll_ano_w
+# Week 0 Unweighted
+Week0_Ord_U <- plot_ordination(OBJ_W0_tss, NMDS_W0_U, color = "Treatment", shape = "Week", label = NULL)
+Week0_Ord_U
+Week0_Ord_U + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
 
-#Inoculum Unweighted
-W10_PlantAll_ano_u <- anosim(distance(OBJ1_exp_tss, "unifrac"), InoculumAll)
-W10_PlantAll_ano_u
+# Week 6 weighted
+Week6_Ord_W <- plot_ordination(OBJ_W6_tss, NMDS_W6_W, color = "Treatment", shape = "Week", label = NULL)
+Week6_Ord_W
+Week6_Ord_W + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
 
-#Inoculum Weighted (FAMILY)
-W10_PlantAll_ano_w <- anosim(distance(OBJ_W10_FAM_tss, "wunifrac"), InoculumAll)
-W10_PlantAll_ano_w
+#Week 6 Unweighted
+Week6_Ord_U <- plot_ordination(OBJ_W6_tss, NMDS_W6_U, color = "Treatment", shape = "Week", label = NULL)
+Week6_Ord_U
+Week6_Ord_U + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
 
-#Inoculum Unweighted (FAMILY)
-W10_PlantAll_ano_u <- anosim(distance(OBJ_W10_FAM_tss, "unifrac"), InoculumAll)
-W10_PlantAll_ano_u
+#Week 8 weighted
+Week8_Ord_W <- plot_ordination(OBJ_W8_tss, NMDS_W8_W, color = "Treatment", shape = "Week", label = NULL)
+Week8_Ord_W
+Week8_Ord_W + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
 
+# Week 8 unweighted
+Week8_Ord_U <- plot_ordination(OBJ_W8_tss, NMDS_W8_U, color = "Treatment", shape = "Week", label = NULL)
+Week8_Ord_U
+Week8_Ord_U + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
 
+#Week 14 weighted
+Week14_Ord_W <- plot_ordination(OBJ_W14_tss, NMDS_W14_W, color = "Treatment", shape = "Week", label = NULL)
+Week14_Ord_W
+Week14_Ord_W + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
 
-#connection Weighted
-W10_ConnAll_ano_W <- anosim(distance(OBJ1_exp_tss, "wunifrac"), ConnectionAll)
-W10_ConnAll_ano_W
-
-#connection Uneighted
-W10_ConnAll_ano_U <- anosim(distance(OBJ1_exp_tss, "unifrac"), ConnectionAll)
-W10_ConnAll_ano_U
-
-
-
-
-#Pull variables for just planted
-#By plant
-PlantPlant <- get_variable(OBJ_Plant_tss, "group")
-#By connection 
-ConnectionPlant <- get_variable(OBJ_Plant_tss, "connection")
-#By Inoculum 
-InoculumPlant <- get_variable(OBJ_Plant_tss, "inoculum")
-
-
-#Plant only
-#Inoculum Weighted
-W10_PlantOnlyPlant_ano_w <- anosim(distance(OBJ_Plant_tss, "wunifrac"), InoculumPlant)
-W10_PlantOnlyPlant_ano_w
-
-#Inoculum Weighted (FAMILY)
-W10_PlantOnlyPlant_ano_w <- anosim(distance(OBJ_PlantOnly_FAM_tss, "wunifrac"), InoculumPlant)
-W10_PlantOnlyPlant_ano_w
-
-#Inoculum Unweighted
-W10_PlantOnlyPlant_ano_u <- anosim(distance(OBJ_Plant_tss, "unifrac"), InoculumPlant)
-W10_PlantOnlyPlant_ano_u
-
-#Inoculum Unweighted (FAMILY)
-W10_PlantOnlyPlant_ano_u <- anosim(distance(OBJ_PlantOnly_FAM_tss, "unifrac"), InoculumPlant)
-W10_PlantOnlyPlant_ano_u
+#week 14 unweighted
+Week14_Ord_U <- plot_ordination(OBJ_W14_tss, NMDS_W14_U, color = "Treatment", shape = "Week", label = NULL)
+Week14_Ord_U
+Week14_Ord_U + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
 
 
+#Connectionn
 
-#connection Weighted
-W10_PlantOnlyConn_ano_W <- anosim(distance(OBJ_Plant_tss, "wunifrac"), ConnectionPlant)
-W10_PlantOnlyConn_ano_W
+#Connected
+#Weighted
+CONN_Ord_W <- plot_ordination(OBJ1_expCONNtss, NMDS_CONN_W, color = "Treatment", shape = "Week", label = NULL)
+CONN_Ord_W
+CONN_Ord_W + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
 
-#connection Weighted
-W10_PlantOnlyConn_ano_W <- anosim(distance(OBJ_Plant_tss, "wunifrac"), ConnectionPlant)
-W10_PlantOnlyConn_ano_W
+#Unweighted
+CONN_Ord_U <- plot_ordination(OBJ1_expCONNtss, NMDS_CONN_U, color = "Treatment", shape = "Week", label = NULL)
+CONN_Ord_U
+CONN_Ord_U + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
 
-#connection Unweighted
-W10_PlantOnlyConn_ano_U <- anosim(distance(OBJ_Plant_tss, "unifrac"), ConnectionPlant)
-W10_PlantOnlyConn_ano_U
+#Unconnected Weighted
+UNCONN_Ord_W <- plot_ordination(OBJ1_expUNCONtss, NMDS_UNCONN_W, color = "Treatment", shape = "Week", label = NULL)
+UNCONN_Ord_W
+UNCONN_Ord_W + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
 
-#### Compare uninoculated vs uninolcualted unconnected only? so that we're looking at like for like?
+#Unconnected Unweighted
+UNCONN_Ord_U <- plot_ordination(OBJ1_expUNCONtss, NMDS_UNCONN_U, color = "Treatment", shape = "Week", label = NULL)
+UNCONN_Ord_U
+UNCONN_Ord_U + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
 
+#Electrode
+#Anode only
+# Weighted
+ANODE_Ord_W <- plot_ordination(OBJ1_expANOtss, NMDS_ANODE_W, color = "Treatment", shape = "Week", label = NULL)
+ANODE_Ord_W
+ANODE_Ord_W + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
 
-#By Inoculum 
-ConnectionOnly <- get_variable(OBJ_PlantConnectionOnly_tss, "connection")
+#Unweighted
+ANODE_Ord_U <- plot_ordination(OBJ1_expANOtss, NMDS_ANODE_U, color = "Treatment", shape = "Week", label = NULL)
+ANODE_Ord_U
+ANODE_Ord_U + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
 
-#connection Weighted
-W10_ConnectionTest_ano_W <- anosim(distance(OBJ_PlantConnectionOnly_tss, "wunifrac"), ConnectionOnly)
-W10_ConnectionTest_ano_W
+#Cathode only
+#Weighted
+CATH_Ord_W <- plot_ordination(OBJ1_expCATHtss, NMDS_CATH_W, color = "Treatment", shape = "Week", label = NULL)
+CATH_Ord_W
+CATH_Ord_W + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
 
-#connection Unweighted
-W10_ConnectionTest_ano_U <- anosim(distance(OBJ_PlantConnectionOnly_tss, "unifrac"), ConnectionOnly)
-W10_ConnectionTest_ano_U
+#Unweighted
+CATH_Ord_U <- plot_ordination(OBJ1_expCATHtss, NMDS_CATH_U, color = "Treatment", shape = "Week", label = NULL)
+CATH_Ord_U
+CATH_Ord_U + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
 
+###################### PERMANOVA -------------------------------------------------------------------
 
-
-############# PERMANOVA  --------------------------------------------------------------
-
-
-### 
 library(vegan)
 
-#Pull Variables
+#Prep for PERMANOVA; Variables
+#First pull the variables for overall that you want to test into objects: (was this necessary for PERMANOVA or just ANOSIMs? maybe test without doing this first ust in case lol)
 #By plant
-PlantAll <- get_variable(OBJ1_exp_tss, "group")
+Location <- get_variable(OBJ1_exp_eltss, "Location")
 #By connection 
-ConnectionAll <- get_variable(OBJ1_exp_tss, "connection")
+Connection <- get_variable(OBJ1_exp_eltss, "Connection")
 #By Inoculum 
-InoculumAll <- get_variable(OBJ1_exp_tss, "inoculum")
-
+Inoculum <- get_variable(OBJ1_exp_eltss, "Inoculum")
+#By Time
+Time <- get_variable(OBJ1_exp_eltss, "Week")
 #Start setup for 2015 data, as per paper 1 script
 #Setup objects for testing significance, effect size, correlation.
-
-
-#Overall
-OBJ1_Wperm_W <- distance(OBJ1_exp_tss, "wunifrac")
-OBJ1_Wperm_U <- distance(OBJ1_exp_tss, "unifrac")
-#Family level
-OBJ1_Wperm_FAM_W <- distance(OBJ_W10_FAM_tss, "wunifrac")
-OBJ1_Wperm_FAM_U <- distance(OBJ_W10_FAM_tss, "unifrac")
-
-#weighted
-W10_ado2_W = adonis2(OBJ1_Wperm_W ~ PlantAll * InoculumAll * ConnectionAll, permutations = 9999)
-W10_ado2_W
-
-#weighted FAMILY
-W10_ado2_FAM_W = adonis2(OBJ1_Wperm_FAM_W ~ PlantAll * InoculumAll * ConnectionAll, permutations = 9999)
-W10_ado2_FAM_W
-
-#unweighted
-W10_ado2_U = adonis2(OBJ1_Wperm_U ~ PlantAll * InoculumAll * ConnectionAll, permutations = 9999)
-W10_ado2_U
-
-#unweighted FAMILY
-W10_ado2_FAM_U = adonis2(OBJ1_Wperm_FAM_U ~ PlantAll * InoculumAll * ConnectionAll, permutations = 9999)
-W10_ado2_FAM_U
-
-# Plant only
-#Pull Variables
-#By plant
-PlantAllPlant <- get_variable(OBJ_Plant_tss, "group")
-#By connection 
-ConnectionAllPlant <- get_variable(OBJ_Plant_tss, "connection")
-#By Inoculum 
-InoculumAllPlant <- get_variable(OBJ_Plant_tss, "inoculum")
-
-#Plant only PERMA
-OBJ1_Wperm_Plant_W <- distance(OBJ_Plant_tss, "wunifrac")
-OBJ1_Wperm_Plant_U <- distance(OBJ_Plant_tss, "unifrac")
-#Family
-OBJ1_Wperm_Plant_FAM_W <- distance(OBJ_PlantOnly_FAM_tss, "wunifrac")
-OBJ1_Wperm_Plant_FAM_U <- distance(OBJ_PlantOnly_FAM_tss, "unifrac")
 
 ###.  by = NULL)
 ###.  by = "margin")
 
+#Distance matrices
+
+#Overall
+OBJ1_Wperm_W <- distance(OBJ1_exp_eltss, "wunifrac")
+OBJ1_Wperm_U <- distance(OBJ1_exp_eltss, "unifrac")
+
+#By weeks
+OBJ1_W0perm_W <- distance(OBJ_W0_tss, "wunifrac")
+OBJ1_W0perm_U <- distance(OBJ_W0_tss, "unifrac")
+
+OBJ1_W6perm_W <- distance(OBJ_W6_tss, "wunifrac")
+OBJ1_W6perm_U <- distance(OBJ_W6_tss, "unifrac")
+
+OBJ1_W8perm_W <- distance(OBJ_W8_tss, "wunifrac")
+OBJ1_W8perm_U <- distance(OBJ_W8_tss, "unifrac")
+
+OBJ1_W14perm_W <- distance(OBJ_W14_tss, "wunifrac")
+OBJ1_W14perm_U <- distance(OBJ_W14_tss, "unifrac")
+
+#By connection
+#COnnected
+OBJ1_CONNperm_W <- distance(OBJ1_expCONNtss, "wunifrac")
+OBJ1_CONNperm_U <- distance(OBJ1_expCONNtss, "unifrac")
+#Unconnected
+OBJ1_UNCONNperm_W <- distance(OBJ1_expUNCONtss, "wunifrac")
+OBJ1_UNCONNperm_U <- distance(OBJ1_expUNCONtss, "unifrac")
+
+#By Electrode
+#Anode
+OBJ1_ANOperm_W <- distance(OBJ1_expANOtss, "wunifrac")
+OBJ1_ANOperm_U <- distance(OBJ1_expANOtss, "unifrac")
+#Cathode
+OBJ1_CATHperm_W <- distance(OBJ1_expCATHtss, "wunifrac")
+OBJ1_CATHperm_U <- distance(OBJ1_expCATHtss, "unifrac")
+
+#adonis2
+
+#Overall
 #weighted
-W10_ado2_Plant_W = adonis2(OBJ1_Wperm_Plant_W ~ ConnectionAllPlant + InoculumAllPlant, permutations = 9999)
-W10_ado2_Plant_W
-
-#weighted FAMILY
-W10_ado2_Plant_FAM_W = adonis2(OBJ1_Wperm_Plant_FAM_W ~ ConnectionAllPlant + InoculumAllPlant, permutations = 9999)
-W10_ado2_Plant_FAM_W
-
+Overall_ado2_W = adonis2(OBJ1_Wperm_W ~ Plant * Inoculum * Connection, permutations = 9999)
+Overall_ado2_W
 #unweighted
-W10_ado2_Plant_U = adonis2(OBJ1_Wperm_Plant_U ~ ConnectionAllPlant * InoculumAllPlant, permutations = 9999)
-W10_ado2_Plant_U
-
-#Unweighted FAMILY
-W10_ado2_Plant_FAM_U = adonis2(OBJ1_Wperm_Plant_FAM_U ~ ConnectionAllPlant * InoculumAllPlant, permutations = 9999)
-W10_ado2_Plant_FAM_U
+Overall_ado2_U = adonis2(OBJ1_Wperm_U ~ Plant * Inoculum * Connection, permutations = 9999)
+Overall_ado2_U
 
 
 
 
+#By time/weeks
+
+#weighted
+W0_ado2_W = adonis2(OBJ1_W0perm_W ~ Plant * Inoculum * Connection, permutations = 9999)
+W0_ado2_W
+#unweighted
+W0_ado2_U = adonis2(OBJ1_W0perm_U ~ Plant * Inoculum * Connection, permutations = 9999)
+W0_ado2_U
+
+#weighted
+W6_ado2_W = adonis2(OBJ1_W6perm_W~ Plant * Inoculum * Connection, permutations = 9999)
+W6_ado2_W
+#unweighted
+W6_ado2_U = adonis2(OBJ1_W6perm_U ~ Plant * Inoculum * Connection, permutations = 9999)
+W6_ado2_U
+
+#weighted
+W8_ado2_W = adonis2(OBJ1_W8perm_W ~ Plant * Inoculum * Connection, permutations = 9999)
+W8_ado2_W
+#unweighted
+W8_ado2_U = adonis2(OBJ1_W8perm_U ~ Plant * Inoculum * Connection, permutations = 9999)
+W8_ado2_U
+
+#weighted
+W14_ado2_W = adonis2(OBJ1_W14perm_W ~ Plant * Inoculum * Connection, permutations = 9999)
+W14_ado2_W
+#unweighted
+W14_ado2_U = adonis2(OBJ1_W14perm_U ~ Plant * Inoculum * Connection, permutations = 9999)
+W14_ado2_U
+
+#By connection
+
+#weighted
+CONN_ado2_W = adonis2(OBJ1_CONNperm_W ~ Plant * Inoculum * Connection, permutations = 9999)
+CONN_ado2_W
+#unweighted
+CONN_ado2_U = adonis2(OBJ1_CONNperm_U ~ Plant * Inoculum * Connection, permutations = 9999)
+CONN_ado2_U
+
+#Unconnected
+#weighted
+UNCONN_ado2_W = adonis2(OBJ1_UNCONNperm_W ~ Plant * Inoculum * Connection, permutations = 9999)
+UNCONN_ado2_W
+#unweighted
+UNCONN_ado2_U = adonis2(OBJ1_UNCONNperm_U ~ Plant * Inoculum * Connection, permutations = 9999)
+UNCONN_ado2_U
+
+#By electrode
+
+#Anode
+#weighted
+ANO_ado2_W = adonis2(OBJ1_ANOperm_W ~ Plant * Inoculum * Connection, permutations = 9999)
+ANO_ado2_W
+#unweighted
+ANO_ado2_U = adonis2(OBJ1_ANOperm_U ~ Plant * Inoculum * Connection, permutations = 9999)
+ANO_ado2_U
+
+#Cathode
+#weighted
+CATH_ado2_W = adonis2(OBJ1_CATHperm_W ~ Plant * Inoculum * Connection, permutations = 9999)
+CATH_ado2_W
+#unweighted
+CATH_ado2_U = adonis2(OBJ1_CATHperm_U ~ Plant * Inoculum * Connection, permutations = 9999)
+CATH_ado2_U
 
 
 
@@ -675,15 +655,17 @@ library(ggplot2)
 library(data.table)
 
 
-#if uninoculated is not being used as the baseline may need to import and create phyloseq object again using alphabetised mapping file:
-# mapping_file_ancom-ordering.csv
+#factor ordering
+#order by weeks/time
+factor(sample_data(OBJ1_exp_el)$Week)
+sample_data(OBJ1_exp_el)$Week = factor(sample_data(OBJ1_exp_el)$Week, levels = c("Zero", "Six", "Eight", "Fourteen"))
 
 #INOCULUM
 #Inoculum at FAMILY controlling for location and connection, uninoculated as baseline
 #differences in inoculation treatment controlling for differences in inoculum? (actually in retrospect dont think ordering actually matters in any way...so use this again for baseline non pattern analysis comaprisons from now on)
 
 
-output_INO_FAM = ancombc2(data = OBJ_W10_conn_planted, tax_level = "Family" , fix_formula = "inoculum", p_adj_method = "holm", prv_cut = 0.1, lib_cut = 0,group = "inoculum", 
+output_INO_FAM = ancombc2(data = OBJ1_exp_el, tax_level = "Family" , fix_formula = "Week", p_adj_method = "holm", prv_cut = 0.1, lib_cut = 0,group = "Week", 
               struc_zero = TRUE, neg_lb = TRUE, alpha = 0.05, global = TRUE)
 
 res_prim_INO_FAM = output_INO_FAM$res %>%
@@ -699,8 +681,23 @@ res_global_INO_FAM %>%
 write.csv(res_global_INO_FAM,"ANCOM-BC2 Global Results_INO_FAM.csv", row.names = TRUE)
 
 
+#for full time series dataset : although W14 plant electrode comparisons with taxa have been done in paper1, the functional side is new
+#SO will proably be worth doing a simple pairwise ancombc2 comparison of locations at W14 including the plant roots
+output_INO_FAM = ancombc2(data = OBJ1_W14_All, tax_level = "Family" , fix_formula = "Week", p_adj_method = "holm", prv_cut = 0.1, lib_cut = 0,group = "Week", 
+              struc_zero = TRUE, neg_lb = TRUE, alpha = 0.05, global = TRUE)
+res_prim_INO_FAM = output_INO_FAM$res %>%
+    mutate_if(is.numeric, function(x) round(x, 2))
+res_prim_INO_FAM %>%
+    data.table(caption = "ANCOM-BC2 Primary Results_INO_FAM")
+write.csv(res_prim_INO_FAM,"ANCOM-BC2 Primary Results_INO_FAM.csv", row.names = TRUE)
 
-########### ANCOM pattern analysis --------------------------------------------------
+res_global_INO_FAM = output_INO_FAM$res_global %>%
+    mutate_if(is.numeric, function(x) round(x, 2))
+res_global_INO_FAM %>%
+    data.table(caption = "ANCOM-BC2 Global Results_INO_FAM")
+write.csv(res_global_INO_FAM,"ANCOM-BC2 Global Results_INO_FAM.csv", row.names = TRUE)
+
+########### ANCOMBC2 pattern analysis --------------------------------------------------
 
 #Note re:import, although the below factor reset does negate the need to futz around wiht renaming columns, because i tested it with the already renamed set it will still need to be iimported using the alternative import unless I can be bothered rewriting again to ensure all is using the oeriginal sheets for phyloseq import
 
@@ -708,65 +705,72 @@ write.csv(res_global_INO_FAM,"ANCOM-BC2 Global Results_INO_FAM.csv", row.names =
 #reordering factors (note use Montebelo as the baseline and DO NOT change it for further runs ...ONLY change the matrix used (try increasing and decreasing trends)
 #reason for this is that the example in thr ancombc2 tutorial uses "obese" as it's baseline and we are following that example as closely as possible so as to not upset the matrix structure/baseline pattern etc
 
-factor(sample_data(OBJ_W10_conn_planted)$inoculum) 
-sample_data(OBJ_W10_conn_planted)$inoculum = factor(sample_data(OBJ_W10_conn_planted)$inoculum, levels = c("Montebello", "a_Uninoculated", "Clostridium"))
+#NOte: re taxa names, due to changes in the way ancombc2 relates your data back to you in terms of taxa levels it is HIGHLY recommended that you first concatenate
+#Make a seperate tax table sheet and using concatenate/textjoin combine taxa levels of family and above in one column and then replace the original family column with them, this will fix the presence of "uncultred" ASVs being marked as #1, 2, 3 etc, with no other way of working out what their higher level taxonoy is
+
+#factor ordering (DO NOT FORGET TO RUN THIS FORST OR YOUR COMPARISON BASLEINE WILL NOT BE SET CORRECTLY AND YOU WILL BE SAD)
+#order by weeks/time
+factor(sample_data(OBJ1_exp_el)$Week)
+sample_data(OBJ1_exp_el)$Week = factor(sample_data(OBJ1_exp_el)$Week, levels = c("Zero", "Six", "Eight", "Fourteen"))
 
 
-#Trend control / Pattern Analysis Version 1 for decreasing abundance correlated with increased plant growth:
+#Trend control / Pattern Analysis Version 1 for decreasing abundance correlated with time progressing:
 #Note: This one is the one that should be better, using correct matrix and subestted to only plants,
 #Further note on trend control settings and matrix. Unless otherwise specified trend control baseline follows the same rules as ancomb, tht is, alphabetical. to change the baseline must use the aboce line resetingg the levels so that the order is correctly matchinng the tutorial example\
 #differences in inoculum controlling for presence of plant (but order factor might not matter??) Adding in tend and trend control node arguments to hopefully get them working
-#This version of the trend control results will be looking for DECREASING with plant growth trending taxa.
-output_INO_FAM = ancombc2(data = OBJ_W10_conn_planted, tax_level = "Family" , fix_formula = "inoculum", p_adj_method = "holm", prv_cut = 0.1, lib_cut = 0,group = "inoculum", 
-              struc_zero = TRUE, neg_lb = TRUE, alpha = 0.05, global = TRUE, trend = TRUE, trend_control = list(contrast = list(matrix(c(1, 0, -1, 1), nrow = 2, byrow = TRUE)), node = list(2), solver = "ECOS", B = 10))
+#This version of the trend control results will be looking for: DECREASING with time?
+output_pattern_DEC = ancombc2(data = OBJ1_exp_el, tax_level = "Family" , fix_formula = "Week", p_adj_method = "holm", prv_cut = 0.1, lib_cut = 0,group = "Week", 
+              struc_zero = TRUE, neg_lb = TRUE, alpha = 0.05, global = TRUE, trend = TRUE, trend_control = list(contrast = list(matrix(c(-1, 0, 0, 1, -1, 0, 0, 1, -1), nrow = 3, byrow = TRUE)), node = list(2), solver = "ECOS", B = 10))
 
 #Export trend analysis
-res_trend = output_INO_FAM$res_trend
-res_trend
-    data.table(caption = "ANCOM-BC2_Trend_Results_FAM")
-write.csv(res_trend,"ANCOM-BC2_Trend_Results_FAM_decreasingwithgrowth.csv", row.names = TRUE)
+res_trendD = output_pattern_DEC$res_trend
+res_trendD
+    data.table(caption = "ANCOM-BC2_Trend_Results_DEC")
+write.csv(res_trendD,"ANCOM-BC2_Trend_Results_FAM_decreasingwithtime.csv", row.names = TRUE)
 
-res_prim_INO_FAM = output_INO_FAM$res %>%
-    mutate_if(is.numeric, function(x) round(x, 2))
-res_prim_INO_FAM %>%
-    data.table(caption = "ANCOM-BC2 Primary Results_INO_FAM")
-write.csv(res_prim_INO_FAM,"ANCOM-BC2 Primary Results_INO_FAM.csv", row.names = TRUE)
-
-res_global_INO_FAM = output_INO_FAM$res_global %>%
-    mutate_if(is.numeric, function(x) round(x, 2))
-res_global_INO_FAM %>%
-    data.table(caption = "ANCOM-BC2 Global Results_INO_FAM")
-write.csv(res_global_INO_FAM,"ANCOM-BC2 Global Results_INO_FAM.csv", row.names = TRUE)
-
-
-
-#Trend control version 2, looking for increasing with plant trending taxa
+#Trend control pt 2, looking for increasing with time trending taxa
 
 #Trend control / Pattern Analysis Version:
 #Note: This one is the one that should be better, using correct matrix and subestted to only plants,
 #Further note on trend control settings and matrix. Unless otherwise specified trend control baseline follows the same rules as ancomb, tht is, alphabetical. to change the baseline must use the aboce line resetingg the levels so that the order is correctly matchinng the tutorial example\
 #differences in inoculum controlling for presence of plant (but order factor might not matter??) Adding in tend and trend control node arguments to hopefully get them working
-#This version of the trend control results will be looking for INCREASING with plant growth trending taxa.
-output_INO_FAM = ancombc2(data = OBJ_W10_conn_planted, tax_level = "Family" , fix_formula = "inoculum", p_adj_method = "holm", prv_cut = 0.1, lib_cut = 0,group = "inoculum", 
-              struc_zero = TRUE, neg_lb = TRUE, alpha = 0.05, global = TRUE, trend = TRUE, trend_control = list(contrast = list(matrix(c(-1, 0, 1, -1), nrow = 2, byrow = TRUE)), node = list(2), solver = "ECOS", B = 10))
+#This version of the trend control results will be looking for: INCREASING with time?
+output_pattern_INC = ancombc2(data = OBJ1_exp_el, tax_level = "Family" , fix_formula = "Week", p_adj_method = "holm", prv_cut = 0.1, lib_cut = 0,group = "Week", 
+              struc_zero = TRUE, neg_lb = TRUE, alpha = 0.05, global = TRUE, trend = TRUE, trend_control = list(contrast = list(matrix(c(1, 0, 0, -1, 1, 0, 0, -1, 1), nrow = 3, byrow = TRUE)), node = list(2), solver = "ECOS", B = 10))
+
+#Export trend analysis
+res_trendI = output_pattern_INC$res_trend
+res_trendI
+    data.table(caption = "ANCOM-BC2_Trend_Results_INC")
+write.csv(res_trendI,"ANCOM-BC2_Trend_Results_FAM_increasingwithtime.csv", row.names = TRUE)
+
+
+
+
+#Pattern Analysis for Individual locations/treatments, grouped (may need to cinsder running for combinations too? e.g Subset Connected Anodes and run that alone vs Unconnected Anodes)
+
+#Connected treatments only
+#This version of the trend control results will be looking for: DECREASING with time?
+output_INO_FAM = ancombc2(data = OBJ1_expCONN, tax_level = "Family" , fix_formula = "Week", p_adj_method = "holm", prv_cut = 0.1, lib_cut = 0,group = "Week", 
+              struc_zero = TRUE, neg_lb = TRUE, alpha = 0.05, global = TRUE, trend = TRUE, trend_control = list(contrast = list(matrix(c(-1, 0, 0, 1, -1, 0, 0, 1, -1), nrow = 3, byrow = TRUE)), node = list(2), solver = "ECOS", B = 10))
 
 #Export trend analysis
 res_trend = output_INO_FAM$res_trend
 res_trend
-    data.table(caption = "ANCOM-BC2_Trend_Results_FAM")
-write.csv(res_trend,"ANCOM-BC2_Trend_Results_FAM_increasingwithgrowth.csv", row.names = TRUE)
+    data.table(caption = "ANCOM-BC2_Trend_Results_Connected_FAM_dec")
+write.csv(res_trend,"ANCOM-BC2_Trend_Results_FAM_Connected_decreasingwithtime.csv", row.names = TRUE)
 
-res_prim_INO_FAM = output_INO_FAM$res %>%
-    mutate_if(is.numeric, function(x) round(x, 2))
-res_prim_INO_FAM %>%
-    data.table(caption = "ANCOM-BC2 Primary Results_INO_FAM")
-write.csv(res_prim_INO_FAM,"ANCOM-BC2 Primary Results_INO_FAM.csv", row.names = TRUE)
+#This version of the trend control results will be looking for: INCREASING with time?
+output_INO_FAM = ancombc2(data = OBJ1_expCONN, tax_level = "Family" , fix_formula = "Week", p_adj_method = "holm", prv_cut = 0.1, lib_cut = 0,group = "Week", 
+              struc_zero = TRUE, neg_lb = TRUE, alpha = 0.05, global = TRUE, trend = TRUE, trend_control = list(contrast = list(matrix(c(1, 0, 0, -1, 1, 0, 0, -1, 1), nrow = 3, byrow = TRUE)), node = list(2), solver = "ECOS", B = 10))
 
-res_global_INO_FAM = output_INO_FAM$res_global %>%
-    mutate_if(is.numeric, function(x) round(x, 2))
-res_global_INO_FAM %>%
-    data.table(caption = "ANCOM-BC2 Global Results_INO_FAM")
-write.csv(res_global_INO_FAM,"ANCOM-BC2 Global Results_INO_FAM.csv", row.names = TRUE)
+#Export trend analysis
+res_trend = output_INO_FAM$res_trend
+res_trend
+    data.table(caption = "ANCOM-BC2_Trend_Results_Connected_FAM_inc")
+write.csv(res_trend,"ANCOM-BC2_Trend_Results_FAM_Connected_increasingwithtime.csv", row.names = TRUE)
+
+
 
 
 ######################################## deseq -------------------------------------------------------------------
@@ -1234,6 +1238,46 @@ install.packages('FuncDiv')
 
 
 # Old paper things below here for reference -------------------------------
+
+
+
+
+##### ###ANCOMBC import (alt) -------------------------------------------------
+## Import for ancombc (only difference is that the phylo object is created pointing to a different mapping file alphabetised so that uninlculated treatment is used as baseline)
+
+#Note use of different tax sheet with levels above family concatenated within the family column
+
+setwd("~/Documents/University/Analysis/PMFC_15_Rerun_2023/Output/For R")
+
+
+#picrust working directory (for quick import without needing to make its own section for now)
+setwd("~/Documents/University/Analysis/PMFC_15_Rerun_2023/Output/For R/picrust import sheets")
+
+#Quick import all to skip the below
+library(phyloseq)
+library(ape)
+library(magrittr)
+library(ggplot2)
+
+otu_table <- as.data.frame(read.csv("raw_readmap.csv", header = TRUE,row.names = "OTU_ID"))
+taxmat <- as.matrix(read.csv("tax_table_CONC.csv", row.names = 1, header = TRUE))
+treat <- as.data.frame(read.csv("mapping_file_ancom-ordering.csv", row.names = 1, header = TRUE))
+TREE <- read.tree("rooted_tree.nwk")
+OTU = otu_table(otu_table, taxa_are_rows = TRUE)
+TAX = tax_table(taxmat)
+TREAT = sample_data(treat)
+OBJ1 = phyloseq(OTU,TAX,TREAT,TREE)
+
+library(magrittr)
+OBJ1 <- OBJ1 %>%
+  subset_taxa(
+    Kingdom == "Bacteria" &
+    Family  != "mitochondria" &
+    Class   != "Chloroplast"
+  )
+
+
+
 
 
 ### Old paper things beloow here onwards
