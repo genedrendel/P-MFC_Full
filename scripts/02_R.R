@@ -112,6 +112,14 @@ OBJ1_exp_tss = transform_sample_counts(OBJ1_exp, function(OTU) OTU/sum(OTU) )
 OBJ1_exp_el <- subset_samples(OBJ1_exp, Electrode_Subset == "Yes")
 OBJ1_exp_eltss <- subset_samples(OBJ1_exp_tss, Electrode_Subset == "Yes")
 
+
+# ***FOR UNINOCULATED SUBSETTING ONLY, paper3 connection story***
+#Subset to ONLY uninoculated, 
+OBJ1_exp_el <- subset_samples(OBJ1_exp_el, Uninoculated_Only == "Yes")
+OBJ1_exp_eltss <- subset_samples(OBJ1_exp_eltss, Uninoculated_Only == "Yes")
+
+
+
 OBJ1_expCONN <- subset_samples(OBJ1_exp_el, Connection == "Connected")
 OBJ1_expCONNtss <- subset_samples(OBJ1_exp_eltss, Connection == "Connected")
 
@@ -142,7 +150,7 @@ OBJ1_expPSEUtss <- subset_samples(OBJ1_exp_el, Inoculum == "Pseudomonas")
 OBJ1_expMONT <- subset_samples(OBJ1_exp_el, Inoculum == "Montebello")
 OBJ1_expMONTtss <- subset_samples(OBJ1_exp_el, Inoculum == "Montebello")
 
-#Subset by time including all treatments
+#Subset by time
 OBJ_W0 <- subset_samples(OBJ1_exp_el, Week == "Zero")
 OBJ_W0_tss <- subset_samples(OBJ1_exp_eltss, Week == "Zero")
 OBJ_W6 <- subset_samples(OBJ1_exp_el, Week == "Six")
@@ -159,8 +167,18 @@ OBJ_W6_CONN <- subset_samples(OBJ1_expCONN, Week == "Six")
 OBJ_W6_CONNtss <- subset_samples(OBJ1_expCONNtss, Week == "Six")
 OBJ_W8_CONN <- subset_samples(OBJ1_expCONN, Week == "Eight")
 OBJ_W8_CONNtss <- subset_samples(OBJ1_expCONNtss, Week == "Eight")
-OBJ_W14CONN <- subset_samples(OBJ1_expCONN, Week == "Fourteen")
+OBJ_W14_CONN <- subset_samples(OBJ1_expCONN, Week == "Fourteen")
 OBJ_W14_CONNtss <- subset_samples(OBJ1_expCONNtss, Week == "Fourteen")
+
+#Subset by connection state over time
+OBJ_W0_UNCONN <- subset_samples(OBJ1_expUNCON, Week == "Zero")
+OBJ_W0_UNCONNtss <- subset_samples(OBJ1_expUNCONtss, Week == "Zero")
+OBJ_W6_UNCONN <- subset_samples(OBJ1_expUNCON, Week == "Six")
+OBJ_W6_UNCONNtss <- subset_samples(OBJ1_expUNCONtss, Week == "Six")
+OBJ_W8_UNCONN <- subset_samples(OBJ1_expUNCON, Week == "Eight")
+OBJ_W8_UNCONNtss <- subset_samples(OBJ1_expUNCONtss, Week == "Eight")
+OBJ_W14_UNCONN <- subset_samples(OBJ1_expUNCON, Week == "Fourteen")
+OBJ_W14_UNCONNtss <- subset_samples(OBJ1_expUNCONtss, Week == "Fourteen")
 
 #Subset by location over time
 #Re: location, worth doing one of just electrodes as per above, and then just use the regular non-subsset week14 for one including plant roots
@@ -176,6 +194,7 @@ OBJ_W8ANO <- subset_samples(OBJ1_expANO, Week == "Eight")
 OBJ_W8_ANOtss <- subset_samples(OBJ1_expANOtss, Week == "Eight")
 OBJ_W14ANO <- subset_samples(OBJ1_expANO, Week == "Fourteen")
 OBJ_W14_ANOtss <- subset_samples(OBJ1_expANOtss, Week == "Fourteen")
+
 
 #Cathode over time
 OBJ_W0CATH <- subset_samples(OBJ1_expCATH, Week == "Zero")
@@ -200,7 +219,7 @@ OTU_tab_FAM = as(otu_table(OBJ_W10_conn_FAM), "matrix")
 OTU_tab_FAMexp = as.data.frame(OTU_tab_FAM)
 write.csv(OTU_tab_FAMexp,"Family_otusheet.csv", row.names = TRUE)
 
-#write corresopnding tax table
+#write corresponding tax table
 TAX_tab_FAM = as(tax_table(OBJ_W10_conn_FAM), "matrix")
 TAX_tab_FAMexp = as.data.frame(TAX_tab_FAM)
 write.csv(TAX_tab_FAMexp,"Family_taxsheet.csv", row.names = TRUE)
@@ -229,7 +248,7 @@ estimate_richness(OBJ1_exp_el, split = TRUE, measures = NULL)
 estimate_richness(OBJ1_exp_el, split = FALSE, measures = NULL)
 
 #Overall 
-a <- plot_richness(OBJ1_exp_el, x = "group")# measures=c("Simpson","Chao1", "Shannon"))#+ theme_bw()
+a <- plot_richness(OBJ1_exp_el, x = "Connection")# measures=c("Simpson","Chao1", "Shannon"))#+ theme_bw()
 a
 
 b <- plot_richness(OBJ1_exp_el, x = "inoculum")# measures=c("Simpson","Chao1", "Shannon"))#+ theme_bw()
@@ -252,8 +271,8 @@ d
 #Overall Plant by Shannon
 p.shannon <- boxplot_alpha(OBJ1, 
                            index = "shannon",
-                           x_var = "group",
-                           fill.colors = c(Planted = "#177BB5",Unplanted =  "#BF8300"))
+                           x_var = "Connection",
+                           fill.colors = c(Connected = "#177BB5",Unconnected =  "#BF8300"))
 
 p.shannon <- p.shannon + theme_minimal() + 
   labs(x = "Plant", y = "Shannon diversity") +
@@ -342,6 +361,205 @@ p.simpson <- p.simpson + theme_minimal() +
 p.simpson
 
 
+
+########### alpha Connection v No Connection over the weeks, alpha plots for paper -----
+
+#note because i am dumb,,....subset by weeks not connection because we want to compare connections not subset them seperately
+#, fucking idiot
+
+#Week 0
+#650 x 450 svg exports
+
+#Shannon
+p.shannon <- boxplot_alpha(OBJ_W0, 
+                           index = "shannon",
+                           x_var = "Connection",
+                           fill.colors = c(Connected = "#00A700",Unconnected =  "#808080"))
+p.shannon <- p.shannon + theme_minimal() + 
+  labs(x = "", y = "Shannon") +
+  ylim(4.0,7.5)
+  theme(axis.text = element_text(size = 12),
+        axis.title = element_text(size = 16),
+        legend.text = element_text(size = 12),
+        legend.title = element_text(size = 16))
+p.shannon
+
+#Chao1
+p.shannon <- boxplot_alpha(OBJ_W0, 
+                           index = "Chao1",
+                           x_var = "Connection",
+                           fill.colors = c(Connected = "#00A700",Unconnected =  "#808080"))
+p.shannon <- p.shannon + theme_minimal() + 
+  labs(x = "", y = "Chao1") +
+    ylim(300,1900)
+  theme(axis.text = element_text(size = 12),
+        axis.title = element_text(size = 16),
+        legend.text = element_text(size = 12),
+        legend.title = element_text(size = 16))
+p.shannon
+
+#Pielou
+p.shannon <- boxplot_alpha(OBJ_W0, 
+                           index = "Pielou",
+                           x_var = "Connection",
+                           fill.colors = c(Connected = "#00A700",Unconnected =  "#808080"))
+p.shannon <- p.shannon + theme_minimal() + 
+  labs(x = "", y = "Pielou") +
+        ylim(0.70,0.95)
+  theme(axis.text = element_text(size = 12),
+        axis.title = element_text(size = 16),
+        legend.text = element_text(size = 12),
+        legend.title = element_text(size = 16))
+p.shannon
+
+
+
+#Week 6
+
+#Shannon
+p.shannon <- boxplot_alpha(OBJ_W6, 
+                           index = "shannon",
+                           x_var = "Connection",
+                           fill.colors = c(Connected = "#00A700",Unconnected =  "#808080"))
+p.shannon <- p.shannon + theme_minimal() + 
+  labs(x = "", y = "Shannon") +
+    ylim(4.0,7.5)
+  theme(axis.text = element_text(size = 12),
+        axis.title = element_text(size = 16),
+        legend.text = element_text(size = 12),
+        legend.title = element_text(size = 16))
+p.shannon
+
+
+#Chao1
+p.shannon <- boxplot_alpha(OBJ_W6, 
+                           index = "Chao1",
+                           x_var = "Connection",
+                           fill.colors = c(Connected = "#00A700",Unconnected =  "#808080"))
+p.shannon <- p.shannon + theme_minimal() + 
+  labs(x = "", y = "Chao1") +
+      ylim(300,1900)
+  theme(axis.text = element_text(size = 12),
+        axis.title = element_text(size = 16),
+        legend.text = element_text(size = 12),
+        legend.title = element_text(size = 16))
+p.shannon
+
+#Pielou
+p.shannon <- boxplot_alpha(OBJ_W6, 
+                           index = "Pielou",
+                           x_var = "Connection",
+                           fill.colors = c(Connected = "#00A700",Unconnected =  "#808080"))
+p.shannon <- p.shannon + theme_minimal() + 
+  labs(x = "", y = "Pielou") +
+        ylim(0.70,0.95)
+  theme(axis.text = element_text(size = 12),
+        axis.title = element_text(size = 16),
+        legend.text = element_text(size = 12),
+        legend.title = element_text(size = 16))
+p.shannon
+
+
+
+
+
+
+#Week 8
+
+#Shannon
+p.shannon <- boxplot_alpha(OBJ_W8, 
+                           index = "shannon",
+                           x_var = "Connection",
+                           fill.colors = c(Connected = "#00A700",Unconnected =  "#808080"))
+p.shannon <- p.shannon + theme_minimal() + 
+  labs(x = "", y = "Shannon") +
+    ylim(4.0,7.5)
+  theme(axis.text = element_text(size = 12),
+        axis.title = element_text(size = 16),
+        legend.text = element_text(size = 12),
+        legend.title = element_text(size = 16))
+p.shannon
+
+
+#Chao1
+p.shannon <- boxplot_alpha(OBJ_W8, 
+                           index = "Chao1",
+                           x_var = "Connection",
+                           fill.colors = c(Connected = "#00A700",Unconnected =  "#808080"))
+p.shannon <- p.shannon + theme_minimal() + 
+  labs(x = "", y = "Chao1") +
+      ylim(300,1900)
+  theme(axis.text = element_text(size = 12),
+        axis.title = element_text(size = 16),
+        legend.text = element_text(size = 12),
+        legend.title = element_text(size = 16))
+p.shannon
+
+#Pielou
+p.shannon <- boxplot_alpha(OBJ_W8, 
+                           index = "Pielou",
+                           x_var = "Connection",
+                           fill.colors = c(Connected = "#00A700",Unconnected =  "#808080"))
+p.shannon <- p.shannon + theme_minimal() + 
+  labs(x = "", y = "Pielou") +
+        ylim(0.70,0.95)
+  theme(axis.text = element_text(size = 12),
+        axis.title = element_text(size = 16),
+        legend.text = element_text(size = 12),
+        legend.title = element_text(size = 16))
+p.shannon
+
+
+
+
+
+
+#Week 14
+
+#Shannon
+p.shannon <- boxplot_alpha(OBJ_W14, 
+                           index = "shannon",
+                           x_var = "Connection",
+                           fill.colors = c(Connected = "#00A700",Unconnected =  "#808080"))
+p.shannon <- p.shannon + theme_minimal() + 
+  labs(x = "", y = "Shannon") +
+    ylim(4.0,7.5)
+  theme(axis.text = element_text(size = 12),
+        axis.title = element_text(size = 16),
+        legend.text = element_text(size = 12),
+        legend.title = element_text(size = 16))
+p.shannon
+
+
+#Chao1
+p.shannon <- boxplot_alpha(OBJ_W14, 
+                           index = "Chao1",
+                           x_var = "Connection",
+                           fill.colors = c(Connected = "#00A700",Unconnected =  "#808080"))
+p.shannon <- p.shannon + theme_minimal() + 
+  labs(x = "", y = "Chao1") +
+    ylim(300,1900)
+  theme(axis.text = element_text(size = 12),
+        axis.title = element_text(size = 16),
+        legend.text = element_text(size = 12),
+        legend.title = element_text(size = 16))
+p.shannon
+
+#Pielou
+p.shannon <- boxplot_alpha(OBJ_W14, 
+                           index = "Pielou",
+                           x_var = "Connection",
+                           fill.colors = c(Connected = "#00A700",Unconnected =  "#808080"))
+p.shannon <- p.shannon + theme_minimal() + 
+  labs(x = "", y = "Pielou") +
+        ylim(0.70,0.95)
+  theme(axis.text = element_text(size = 12),
+        axis.title = element_text(size = 16),
+        legend.text = element_text(size = 12),
+        legend.title = element_text(size = 16))
+p.shannon
+
+
 ###### nMDS --------------------------------------------------------------------
 #remember to specify tss datasets
 # Overall - all time points, only cutting out plants (because only wk14)
@@ -401,8 +619,8 @@ NMDS_ANODE_W
 NMDS_ANODE_U <- ordinate(OBJ1_expANOtss, "NMDS", distance = "unifrac", weighted = FALSE, parallel = TRUE)
 NMDS_ANODE_U
 #Cathode only
-NMDS_ANODE_W <- ordinate(OBJ1_expCATHtss, "NMDS", distance = "unifrac", weighted = TRUE, parallel = TRUE)
-NMDS_ANODE_W
+NMDS_CATH_W <- ordinate(OBJ1_expCATHtss, "NMDS", distance = "unifrac", weighted = TRUE, parallel = TRUE)
+NMDS_CATH_W
 
 NMDS_CATH_U <- ordinate(OBJ1_expCATHtss, "NMDS", distance = "unifrac", weighted = FALSE, parallel = TRUE)
 NMDS_CATH_U
@@ -423,66 +641,244 @@ OverallOrd_U + theme_grey() + theme(text = element_text(size = 14)) + geom_point
 #By week
 
 # Week 0 weighted
-Week0_Ord_W <- plot_ordination(OBJ_W0_tss, NMDS_W0_W, color = "Treatment", shape = "Week", label = NULL)
+Week0_Ord_W <- plot_ordination(OBJ_W0_tss, NMDS_W0_W, color = "Treatment", shape = "Location", label = NULL)
 Week0_Ord_W
-Week0_Ord_W + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
+Week0_Ord_W + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#00A700","#808080"))
+
+#Week 0 - weighted 
+Week0_Ord_W + geom_point(size = 3.5) + xlab("Axis 1") + ylab("Axis 2") + scale_color_manual(values = c("#00A700","#808080")) + theme(
+  #remove legend (for matching sizes of plots and/or exporting with the aim of combining 2 plots with just one legend for both)
+  legend.position = "none",
+  # get rid of panel grids
+  panel.grid.major = element_blank(),
+  panel.grid.minor = element_blank(),
+  # Change plot axes and panel background
+  axis.text.x = element_text(colour = "black", size = 12),
+  axis.text.y = element_text(colour = "black", size = 12),
+  axis.ticks = element_line(colour = "black"),
+  #axis.line = element_line(colour = "gray"),
+  panel.border = element_rect(colour = "black", fill = NA),
+  plot.background = element_rect(fill = "white"),
+  panel.background = element_rect(fill = 'white'),
+  # Change legend
+  legend.background = element_rect(fill = "white", color = NA),
+  legend.key = element_rect(color = "white", fill = "white"),
+  legend.title = element_text(color = "black"),
+  legend.text = element_text(color = "black")
+  )
 
 # Week 0 Unweighted
-Week0_Ord_U <- plot_ordination(OBJ_W0_tss, NMDS_W0_U, color = "Treatment", shape = "Week", label = NULL)
+Week0_Ord_U <- plot_ordination(OBJ_W0_tss, NMDS_W0_U, color = "Treatment", shape = "Location", label = NULL)
 Week0_Ord_U
-Week0_Ord_U + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
+Week0_Ord_U + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#00A700","#808080"))
+
+Week0_Ord_U + geom_point(size = 3.5) + xlab("Axis 1") + ylab("Axis 2") + scale_color_manual(values = c("#00A700","#808080")) + theme(
+  #remove legend (for matching sizes of plots and/or exporting with the aim of combining 2 plots with just one legend for both)
+  legend.position = "none",
+  # get rid of panel grids
+  panel.grid.major = element_blank(),
+  panel.grid.minor = element_blank(),
+  # Change plot axes and panel background
+  axis.text.x = element_text(colour = "black", size = 12),
+  axis.text.y = element_text(colour = "black", size = 12),
+  axis.ticks = element_line(colour = "black"),
+  #axis.line = element_line(colour = "gray"),
+  panel.border = element_rect(colour = "black", fill = NA),
+  plot.background = element_rect(fill = "white"),
+  panel.background = element_rect(fill = 'white'),
+  # Change legend
+  legend.background = element_rect(fill = "white", color = NA),
+  legend.key = element_rect(color = "white", fill = "white"),
+  legend.title = element_text(color = "black"),
+  legend.text = element_text(color = "black")
+  )
+
 
 # Week 6 weighted
-Week6_Ord_W <- plot_ordination(OBJ_W6_tss, NMDS_W6_W, color = "Treatment", shape = "Week", label = NULL)
+Week6_Ord_W <- plot_ordination(OBJ_W6_tss, NMDS_W6_W, color = "Treatment", shape = "Location", label = NULL)
 Week6_Ord_W
-Week6_Ord_W + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
+Week6_Ord_W + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#00A700","#808080"))
+
+Week6_Ord_W + geom_point(size = 3.5) + xlab("Axis 1") + ylab("Axis 2") + scale_color_manual(values = c("#00A700","#808080")) + theme(
+  #remove legend (for matching sizes of plots and/or exporting with the aim of combining 2 plots with just one legend for both)
+  legend.position = "none",
+  # get rid of panel grids
+  panel.grid.major = element_blank(),
+  panel.grid.minor = element_blank(),
+  # Change plot axes and panel background
+  axis.text.x = element_text(colour = "black", size = 12),
+  axis.text.y = element_text(colour = "black", size = 12),
+  axis.ticks = element_line(colour = "black"),
+  #axis.line = element_line(colour = "gray"),
+  panel.border = element_rect(colour = "black", fill = NA),
+  plot.background = element_rect(fill = "white"),
+  panel.background = element_rect(fill = 'white'),
+  # Change legend
+  legend.background = element_rect(fill = "white", color = NA),
+  legend.key = element_rect(color = "white", fill = "white"),
+  legend.title = element_text(color = "black"),
+  legend.text = element_text(color = "black")
+  )
 
 #Week 6 Unweighted
-Week6_Ord_U <- plot_ordination(OBJ_W6_tss, NMDS_W6_U, color = "Treatment", shape = "Week", label = NULL)
+Week6_Ord_U <- plot_ordination(OBJ_W6_tss, NMDS_W6_U, color = "Treatment", shape = "Location", label = NULL)
 Week6_Ord_U
-Week6_Ord_U + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
+Week6_Ord_U + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#00A700","#808080"))
+
+Week6_Ord_U + geom_point(size = 3.5) + xlab("Axis 1") + ylab("Axis 2") + scale_color_manual(values = c("#00A700","#808080")) + theme(
+  #remove legend (for matching sizes of plots and/or exporting with the aim of combining 2 plots with just one legend for both)
+  legend.position = "none",
+  # get rid of panel grids
+  panel.grid.major = element_blank(),
+  panel.grid.minor = element_blank(),
+  # Change plot axes and panel background
+  axis.text.x = element_text(colour = "black", size = 12),
+  axis.text.y = element_text(colour = "black", size = 12),
+  axis.ticks = element_line(colour = "black"),
+  #axis.line = element_line(colour = "gray"),
+  panel.border = element_rect(colour = "black", fill = NA),
+  plot.background = element_rect(fill = "white"),
+  panel.background = element_rect(fill = 'white'),
+  # Change legend
+  legend.background = element_rect(fill = "white", color = NA),
+  legend.key = element_rect(color = "white", fill = "white"),
+  legend.title = element_text(color = "black"),
+  legend.text = element_text(color = "black")
+  )
+
+
+
 
 #Week 8 weighted
-Week8_Ord_W <- plot_ordination(OBJ_W8_tss, NMDS_W8_W, color = "Treatment", shape = "Week", label = NULL)
+Week8_Ord_W <- plot_ordination(OBJ_W8_tss, NMDS_W8_W, color = "Treatment", shape = "Location", label = NULL)
 Week8_Ord_W
-Week8_Ord_W + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
+Week8_Ord_W + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#00A700","#808080"))
+
+Week8_Ord_W + geom_point(size = 3.5) + xlab("Axis 1") + ylab("Axis 2") + scale_color_manual(values = c("#00A700","#808080")) + theme(
+  #remove legend (for matching sizes of plots and/or exporting with the aim of combining 2 plots with just one legend for both)
+  legend.position = "none",
+  # get rid of panel grids
+  panel.grid.major = element_blank(),
+  panel.grid.minor = element_blank(),
+  # Change plot axes and panel background
+  axis.text.x = element_text(colour = "black", size = 12),
+  axis.text.y = element_text(colour = "black", size = 12),
+  axis.ticks = element_line(colour = "black"),
+  #axis.line = element_line(colour = "gray"),
+  panel.border = element_rect(colour = "black", fill = NA),
+  plot.background = element_rect(fill = "white"),
+  panel.background = element_rect(fill = 'white'),
+  # Change legend
+  legend.background = element_rect(fill = "white", color = NA),
+  legend.key = element_rect(color = "white", fill = "white"),
+  legend.title = element_text(color = "black"),
+  legend.text = element_text(color = "black")
+  )
 
 # Week 8 unweighted
-Week8_Ord_U <- plot_ordination(OBJ_W8_tss, NMDS_W8_U, color = "Treatment", shape = "Week", label = NULL)
+Week8_Ord_U <- plot_ordination(OBJ_W8_tss, NMDS_W8_U, color = "Treatment", shape = "Location", label = NULL)
 Week8_Ord_U
-Week8_Ord_U + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
+Week8_Ord_U + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#00A700","#808080"))
+
+Week8_Ord_U + geom_point(size = 3.5) + xlab("Axis 1") + ylab("Axis 2") + scale_color_manual(values = c("#00A700","#808080")) + theme(
+  #remove legend (for matching sizes of plots and/or exporting with the aim of combining 2 plots with just one legend for both)
+  legend.position = "none",
+  # get rid of panel grids
+  panel.grid.major = element_blank(),
+  panel.grid.minor = element_blank(),
+  # Change plot axes and panel background
+  axis.text.x = element_text(colour = "black", size = 12),
+  axis.text.y = element_text(colour = "black", size = 12),
+  axis.ticks = element_line(colour = "black"),
+  #axis.line = element_line(colour = "gray"),
+  panel.border = element_rect(colour = "black", fill = NA),
+  plot.background = element_rect(fill = "white"),
+  panel.background = element_rect(fill = 'white'),
+  # Change legend
+  legend.background = element_rect(fill = "white", color = NA),
+  legend.key = element_rect(color = "white", fill = "white"),
+  legend.title = element_text(color = "black"),
+  legend.text = element_text(color = "black")
+  )
+
+
+
 
 #Week 14 weighted
-Week14_Ord_W <- plot_ordination(OBJ_W14_tss, NMDS_W14_W, color = "Treatment", shape = "Week", label = NULL)
+Week14_Ord_W <- plot_ordination(OBJ_W14_tss, NMDS_W14_W, color = "Treatment", shape = "Location", label = NULL)
 Week14_Ord_W
-Week14_Ord_W + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
+Week14_Ord_W + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#00A700","#808080"))
+
+Week14_Ord_W + geom_point(size = 3.5) + xlab("Axis 1") + ylab("Axis 2") + scale_color_manual(values = c("#00A700","#808080")) + theme(
+  #remove legend (for matching sizes of plots and/or exporting with the aim of combining 2 plots with just one legend for both)
+  legend.position = "none",
+  # get rid of panel grids
+  panel.grid.major = element_blank(),
+  panel.grid.minor = element_blank(),
+  # Change plot axes and panel background
+  axis.text.x = element_text(colour = "black", size = 12),
+  axis.text.y = element_text(colour = "black", size = 12),
+  axis.ticks = element_line(colour = "black"),
+  #axis.line = element_line(colour = "gray"),
+  panel.border = element_rect(colour = "black", fill = NA),
+  plot.background = element_rect(fill = "white"),
+  panel.background = element_rect(fill = 'white'),
+  # Change legend
+  legend.background = element_rect(fill = "white", color = NA),
+  legend.key = element_rect(color = "white", fill = "white"),
+  legend.title = element_text(color = "black"),
+  legend.text = element_text(color = "black")
+  )
 
 #week 14 unweighted
-Week14_Ord_U <- plot_ordination(OBJ_W14_tss, NMDS_W14_U, color = "Treatment", shape = "Week", label = NULL)
+Week14_Ord_U <- plot_ordination(OBJ_W14_tss, NMDS_W14_U, color = "Treatment", shape = "Location", label = NULL)
 Week14_Ord_U
-Week14_Ord_U + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
+Week14_Ord_U + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#00A700","#808080"))
+
+
+Week14_Ord_U + geom_point(size = 3.5) + xlab("Axis 1") + ylab("Axis 2") + scale_color_manual(values = c("#00A700","#808080")) + theme(
+  #remove legend (for matching sizes of plots and/or exporting with the aim of combining 2 plots with just one legend for both)
+  legend.position = "none",
+  # get rid of panel grids
+  panel.grid.major = element_blank(),
+  panel.grid.minor = element_blank(),
+  # Change plot axes and panel background
+  axis.text.x = element_text(colour = "black", size = 12),
+  axis.text.y = element_text(colour = "black", size = 12),
+  axis.ticks = element_line(colour = "black"),
+  #axis.line = element_line(colour = "gray"),
+  panel.border = element_rect(colour = "black", fill = NA),
+  plot.background = element_rect(fill = "white"),
+  panel.background = element_rect(fill = 'white'),
+  # Change legend
+  legend.background = element_rect(fill = "white", color = NA),
+  legend.key = element_rect(color = "white", fill = "white"),
+  legend.title = element_text(color = "black"),
+  legend.text = element_text(color = "black")
+  )
+
 
 
 #Connectionn
 
 #Connected
 #Weighted
-CONN_Ord_W <- plot_ordination(OBJ1_expCONNtss, NMDS_CONN_W, color = "Treatment", shape = "Week", label = NULL)
+CONN_Ord_W <- plot_ordination(OBJ1_expCONNtss, NMDS_CONN_W, color = "Week", shape = "Location", label = NULL)
 CONN_Ord_W
 CONN_Ord_W + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
 
 #Unweighted
-CONN_Ord_U <- plot_ordination(OBJ1_expCONNtss, NMDS_CONN_U, color = "Treatment", shape = "Week", label = NULL)
+CONN_Ord_U <- plot_ordination(OBJ1_expCONNtss, NMDS_CONN_U, color = "Week", shape = "Location", label = NULL)
 CONN_Ord_U
 CONN_Ord_U + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
 
 #Unconnected Weighted
-UNCONN_Ord_W <- plot_ordination(OBJ1_expUNCONtss, NMDS_UNCONN_W, color = "Treatment", shape = "Week", label = NULL)
+UNCONN_Ord_W <- plot_ordination(OBJ1_expUNCONtss, NMDS_UNCONN_W, color = "Week", shape = "Location", label = NULL)
 UNCONN_Ord_W
 UNCONN_Ord_W + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
 
 #Unconnected Unweighted
-UNCONN_Ord_U <- plot_ordination(OBJ1_expUNCONtss, NMDS_UNCONN_U, color = "Treatment", shape = "Week", label = NULL)
+UNCONN_Ord_U <- plot_ordination(OBJ1_expUNCONtss, NMDS_UNCONN_U, color = "Week", shape = "Location", label = NULL)
 UNCONN_Ord_U
 UNCONN_Ord_U + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
 
@@ -512,19 +908,6 @@ CATH_Ord_U + theme_grey() + theme(text = element_text(size = 14)) + geom_point(s
 ###################### PERMANOVA -------------------------------------------------------------------
 
 library(vegan)
-
-#Prep for PERMANOVA; Variables
-#First pull the variables for overall that you want to test into objects: (was this necessary for PERMANOVA or just ANOSIMs? maybe test without doing this first ust in case lol)
-#By plant
-Location <- get_variable(OBJ1_exp_eltss, "Location")
-#By connection 
-Connection <- get_variable(OBJ1_exp_eltss, "Connection")
-#By Inoculum 
-Inoculum <- get_variable(OBJ1_exp_eltss, "Inoculum")
-#By Time
-Time <- get_variable(OBJ1_exp_eltss, "Week")
-#Start setup for 2015 data, as per paper 1 script
-#Setup objects for testing significance, effect size, correlation.
 
 ###.  by = NULL)
 ###.  by = "margin")
@@ -566,82 +949,197 @@ OBJ1_CATHperm_U <- distance(OBJ1_expCATHtss, "unifrac")
 
 #adonis2
 
+#Prep for PERMANOVA; Variables
+#First pull the variables for overall that you want to test into objects
+#By location
+Location <- get_variable(OBJ1_exp_eltss, "Location")
+#By connection 
+Connection <- get_variable(OBJ1_exp_eltss, "Connection")
+#By Inoculum 
+Inoculum <- get_variable(OBJ1_exp_eltss, "Inoculum")
+#By Time
+Time <- get_variable(OBJ1_exp_eltss, "Week")
+
 #Overall
 #weighted
-Overall_ado2_W = adonis2(OBJ1_Wperm_W ~ Plant * Inoculum * Connection, permutations = 9999)
+Overall_ado2_W = adonis2(OBJ1_Wperm_W ~ Location * Inoculum * Connection * Time, permutations = 9999)
 Overall_ado2_W
 #unweighted
-Overall_ado2_U = adonis2(OBJ1_Wperm_U ~ Plant * Inoculum * Connection, permutations = 9999)
+Overall_ado2_U = adonis2(OBJ1_Wperm_U ~ Location * Inoculum * Connection * Time, permutations = 9999)
 Overall_ado2_U
 
-
-
+#MOST RECENT UPDATES: REMOVING ALL INOCULATIONS AND ONLY COMPARING CONNECTION OR LACK OF CONNECTION
+# OVer time comparing connected and unconnected without inoculaiotns
+#For paper 3
 
 #By time/weeks
+Location0 <- get_variable(OBJ_W0_tss, "Location")
+#By connection 
+Connection0 <- get_variable(OBJ_W0_tss, "Connection")
 
 #weighted
-W0_ado2_W = adonis2(OBJ1_W0perm_W ~ Plant * Inoculum * Connection, permutations = 9999)
+W0_ado2_W = adonis2(OBJ1_W0perm_W ~ Location0 * Connection0, permutations = 9999)
 W0_ado2_W
 #unweighted
-W0_ado2_U = adonis2(OBJ1_W0perm_U ~ Plant * Inoculum * Connection, permutations = 9999)
+W0_ado2_U = adonis2(OBJ1_W0perm_U ~ Location0 * Connection0, permutations = 9999)
 W0_ado2_U
 
+#By time/weeks
+Location6 <- get_variable(OBJ_W6_tss, "Location")
+#By connection 
+Connection6 <- get_variable(OBJ_W6_tss, "Connection")
+
 #weighted
-W6_ado2_W = adonis2(OBJ1_W6perm_W~ Plant * Inoculum * Connection, permutations = 9999)
+W6_ado2_W = adonis2(OBJ1_W6perm_W~ Location6 * Connection6, permutations = 9999)
 W6_ado2_W
 #unweighted
-W6_ado2_U = adonis2(OBJ1_W6perm_U ~ Plant * Inoculum * Connection, permutations = 9999)
+W6_ado2_U = adonis2(OBJ1_W6perm_U ~ Location6 * Connection6, permutations = 9999)
 W6_ado2_U
 
+#By time/weeks
+Location8 <- get_variable(OBJ_W8_tss, "Location")
+#By connection 
+Connection8 <- get_variable(OBJ_W8_tss, "Connection")
+
 #weighted
-W8_ado2_W = adonis2(OBJ1_W8perm_W ~ Plant * Inoculum * Connection, permutations = 9999)
+W8_ado2_W = adonis2(OBJ1_W8perm_W ~ Location8 * Connection8, permutations = 9999)
 W8_ado2_W
 #unweighted
-W8_ado2_U = adonis2(OBJ1_W8perm_U ~ Plant * Inoculum * Connection, permutations = 9999)
+W8_ado2_U = adonis2(OBJ1_W8perm_U ~ Location8 * Connection8, permutations = 9999)
 W8_ado2_U
 
+#By time/weeks
+Location14 <- get_variable(OBJ_W14_tss, "Location")
+#By connection 
+Connection14 <- get_variable(OBJ_W14_tss, "Connection")
+
 #weighted
-W14_ado2_W = adonis2(OBJ1_W14perm_W ~ Plant * Inoculum * Connection, permutations = 9999)
+W14_ado2_W = adonis2(OBJ1_W14perm_W ~ Location14 * Connection14, permutations = 9999)
 W14_ado2_W
 #unweighted
-W14_ado2_U = adonis2(OBJ1_W14perm_U ~ Plant * Inoculum * Connection, permutations = 9999)
+W14_ado2_U = adonis2(OBJ1_W14perm_U ~ Location14 * Connection14, permutations = 9999)
 W14_ado2_U
 
-#By connection
+
+
+
+
+# below are older overall ones including inoculation treatments
+
+#By time/weeks
+Location0 <- get_variable(OBJ_W0_tss, "Location")
+#By connection 
+Connection0 <- get_variable(OBJ_W0_tss, "Connection")
+#By Inoculum 
+Inoculum0 <- get_variable(OBJ_W0_tss, "Inoculum")
 
 #weighted
-CONN_ado2_W = adonis2(OBJ1_CONNperm_W ~ Plant * Inoculum * Connection, permutations = 9999)
+W0_ado2_W = adonis2(OBJ1_W0perm_W ~ Location0 * Inoculum0 * Connection0, permutations = 9999)
+W0_ado2_W
+#unweighted
+W0_ado2_U = adonis2(OBJ1_W0perm_U ~ Location0 * Inoculum0 * Connection0, permutations = 9999)
+W0_ado2_U
+
+#By time/weeks
+Location6 <- get_variable(OBJ_W6_tss, "Location")
+#By connection 
+Connection6 <- get_variable(OBJ_W6_tss, "Connection")
+#By Inoculum 
+Inoculum6 <- get_variable(OBJ_W6_tss, "Inoculum")
+
+#weighted
+W6_ado2_W = adonis2(OBJ1_W6perm_W~ Location6 * Inoculum6 * Connection6, permutations = 9999)
+W6_ado2_W
+#unweighted
+W6_ado2_U = adonis2(OBJ1_W6perm_U ~ Location6 * Inoculum6 * Connection6, permutations = 9999)
+W6_ado2_U
+
+#By time/weeks
+Location8 <- get_variable(OBJ_W8_tss, "Location")
+#By connection 
+Connection8 <- get_variable(OBJ_W8_tss, "Connection")
+#By Inoculum 
+Inoculum8 <- get_variable(OBJ_W8_tss, "Inoculum")
+
+#weighted
+W8_ado2_W = adonis2(OBJ1_W8perm_W ~ Location8 * Inoculum8 * Connection8, permutations = 9999)
+W8_ado2_W
+#unweighted
+W8_ado2_U = adonis2(OBJ1_W8perm_U ~ Location8 * Inoculum8 * Connection8, permutations = 9999)
+W8_ado2_U
+
+#By time/weeks
+Location14 <- get_variable(OBJ_W14_tss, "Location")
+#By connection 
+Connection14 <- get_variable(OBJ_W14_tss, "Connection")
+#By Inoculum 
+Inoculum14 <- get_variable(OBJ_W14_tss, "Inoculum")
+
+#weighted
+W14_ado2_W = adonis2(OBJ1_W14perm_W ~ Location14 * Inoculum14 * Connection14, permutations = 9999)
+W14_ado2_W
+#unweighted
+W14_ado2_U = adonis2(OBJ1_W14perm_U ~ Location14 * Inoculum14 * Connection14, permutations = 9999)
+W14_ado2_U
+
+
+
+#By connection
+#COnnected
+LocationCON <- get_variable(OBJ1_expCONNtss, "Location")
+#By connection 
+TimeCON <- get_variable(OBJ1_expCONNtss, "Week")
+#By Inoculum 
+InoculumCON <- get_variable(OBJ1_expCONNtss, "Inoculum")
+
+#weighted
+CONN_ado2_W = adonis2(OBJ1_CONNperm_W ~ LocationCON * InoculumCON * TimeCON, permutations = 9999)
 CONN_ado2_W
 #unweighted
-CONN_ado2_U = adonis2(OBJ1_CONNperm_U ~ Plant * Inoculum * Connection, permutations = 9999)
+CONN_ado2_U = adonis2(OBJ1_CONNperm_U ~ LocationCON * InoculumCON * TimeCON, permutations = 9999)
 CONN_ado2_U
 
 #Unconnected
+LocationUNC <- get_variable(OBJ1_expUNCONtss, "Location")
+#By connection 
+TimeUNC <- get_variable(OBJ1_expUNCONtss, "Connection")
+#By Inoculum 
+InoculumUNC <- get_variable(OBJ1_expUNCONtss, "Inoculum")
+
 #weighted
-UNCONN_ado2_W = adonis2(OBJ1_UNCONNperm_W ~ Plant * Inoculum * Connection, permutations = 9999)
+UNCONN_ado2_W = adonis2(OBJ1_UNCONNperm_W ~ LocationUNC * InoculumUNC * TimeUNC, permutations = 9999)
 UNCONN_ado2_W
 #unweighted
-UNCONN_ado2_U = adonis2(OBJ1_UNCONNperm_U ~ Plant * Inoculum * Connection, permutations = 9999)
+UNCONN_ado2_U = adonis2(OBJ1_UNCONNperm_U ~ LocationUNC * InoculumUNC * TimeUNC, permutations = 9999)
 UNCONN_ado2_U
 
 #By electrode
 
 #Anode
+TimeAN <- get_variable(OBJ1_expANOtss, "Week")
+#By connection 
+ConnectionAN <- get_variable(OBJ1_expANOtss, "Connection")
+#By Inoculum 
+InoculumAN <- get_variable(OBJ1_expANOtss, "Inoculum")
 #weighted
-ANO_ado2_W = adonis2(OBJ1_ANOperm_W ~ Plant * Inoculum * Connection, permutations = 9999)
+ANO_ado2_W = adonis2(OBJ1_ANOperm_W ~ ConnectionAN * InoculumAN * TimeAN, permutations = 9999)
 ANO_ado2_W
 #unweighted
-ANO_ado2_U = adonis2(OBJ1_ANOperm_U ~ Plant * Inoculum * Connection, permutations = 9999)
+ANO_ado2_U = adonis2(OBJ1_ANOperm_U ~ ConnectionAN * InoculumAN * TimeAN, permutations = 9999)
 ANO_ado2_U
 
 #Cathode
+TimeCA <- get_variable(OBJ1_expCATHtss, "Location")
+#By connection 
+ConnectionCA <- get_variable(OBJ1_expCATHtss, "Connection")
+#By Inoculum 
+InoculumCA <- get_variable(OBJ1_expCATHtss, "Inoculum")
 #weighted
-CATH_ado2_W = adonis2(OBJ1_CATHperm_W ~ Plant * Inoculum * Connection, permutations = 9999)
+CATH_ado2_W = adonis2(OBJ1_CATHperm_W ~ ConnectionCA * InoculumCA * TimeCA, permutations = 9999)
 CATH_ado2_W
 #unweighted
-CATH_ado2_U = adonis2(OBJ1_CATHperm_U ~ Plant * Inoculum * Connection, permutations = 9999)
+CATH_ado2_U = adonis2(OBJ1_CATHperm_U ~ ConnectionCA * InoculumCA * TimeCA, permutations = 9999)
 CATH_ado2_U
-
 
 
 ################################## ANCOMBC2 ----------------------------------------------------------------
@@ -698,6 +1196,59 @@ res_global_INO_FAM %>%
 write.csv(res_global_INO_FAM,"ANCOM-BC2 Global Results_INO_FAM.csv", row.names = TRUE)
 
 ########### ANCOMBC2 pattern analysis --------------------------------------------------
+
+#Note on pattern analysis: note that each paired set of increasing and decreasing are independent
+#But between sets the same object names are used. so if wanting to run multiple sequentially do not run more than one pair
+#or ensure renaming all objects between each set 
+
+#New pattern analysis connected over time only
+factor(sample_data(OBJ1_expCONN)$Week)
+sample_data(OBJ1_expCONN)$Week = factor(sample_data(OBJ1_expCONN)$Week, levels = c("Zero", "Six", "Eight", "Fourteen"))
+
+#Connected decreasing abundance over time
+output_pattern_DEC = ancombc2(data = OBJ1_expCONN, tax_level = "Family" , fix_formula = "Week", p_adj_method = "holm", prv_cut = 0.1, lib_cut = 0,group = "Week", 
+              struc_zero = TRUE, neg_lb = TRUE, alpha = 0.05, global = TRUE, trend = TRUE, trend_control = list(contrast = list(matrix(c(-1, 0, 0, 1, -1, 0, 0, 1, -1), nrow = 3, byrow = TRUE)), node = list(2), solver = "ECOS", B = 10))
+#Export trend analysis
+res_trendD = output_pattern_DEC$res_trend
+res_trendD
+    data.table(caption = "ANCOM-BC2_Trend_Results_DEC")
+write.csv(res_trendD,"ANCOM-BC2_Trend_Results_FAM_decreasingwithtime_CONN.csv", row.names = TRUE)
+
+#Connected increasing abundance over time
+output_pattern_INC = ancombc2(data = OBJ1_expCONN, tax_level = "Family" , fix_formula = "Week", p_adj_method = "holm", prv_cut = 0.1, lib_cut = 0,group = "Week", 
+              struc_zero = TRUE, neg_lb = TRUE, alpha = 0.05, global = TRUE, trend = TRUE, trend_control = list(contrast = list(matrix(c(1, 0, 0, -1, 1, 0, 0, -1, 1), nrow = 3, byrow = TRUE)), node = list(2), solver = "ECOS", B = 10))
+#Export trend analysis
+res_trendI = output_pattern_INC$res_trend
+res_trendI
+    data.table(caption = "ANCOM-BC2_Trend_Results_INC")
+write.csv(res_trendI,"ANCOM-BC2_Trend_Results_FAM_increasingwithtime_CONN.csv", row.names = TRUE)
+
+
+#new pattern analysis unconnected over time only
+factor(sample_data(OBJ1_expUNCON)$Week)
+sample_data(OBJ1_expUNCON)$Week = factor(sample_data(OBJ1_expUNCON)$Week, levels = c("Zero", "Six", "Eight", "Fourteen"))
+
+
+#Unconnected decreasing in abundance over time
+output_pattern_DEC = ancombc2(data = OBJ1_expUNCON, tax_level = "Family" , fix_formula = "Week", p_adj_method = "holm", prv_cut = 0.1, lib_cut = 0,group = "Week", 
+              struc_zero = TRUE, neg_lb = TRUE, alpha = 0.05, global = TRUE, trend = TRUE, trend_control = list(contrast = list(matrix(c(-1, 0, 0, 1, -1, 0, 0, 1, -1), nrow = 3, byrow = TRUE)), node = list(2), solver = "ECOS", B = 10))
+#Export trend analysis
+res_trendD = output_pattern_DEC$res_trend
+res_trendD
+    data.table(caption = "ANCOM-BC2_Trend_Results_DEC")
+write.csv(res_trendD,"ANCOM-BC2_Trend_Results_FAM_decreasingwithtime_UNCON.csv", row.names = TRUE)
+#Unconnected increasing in abundance over time
+output_pattern_INC = ancombc2(data = OBJ1_expUNCON, tax_level = "Family" , fix_formula = "Week", p_adj_method = "holm", prv_cut = 0.1, lib_cut = 0,group = "Week", 
+              struc_zero = TRUE, neg_lb = TRUE, alpha = 0.05, global = TRUE, trend = TRUE, trend_control = list(contrast = list(matrix(c(1, 0, 0, -1, 1, 0, 0, -1, 1), nrow = 3, byrow = TRUE)), node = list(2), solver = "ECOS", B = 10))
+#Export trend analysis
+res_trendI = output_pattern_INC$res_trend
+res_trendI
+    data.table(caption = "ANCOM-BC2_Trend_Results_INC")
+write.csv(res_trendI,"ANCOM-BC2_Trend_Results_FAM_increasingwithtime_UNCON.csv", row.names = TRUE)
+
+
+# Older overall pattern analysis starts here:
+
 
 #Note re:import, although the below factor reset does negate the need to futz around wiht renaming columns, because i tested it with the already renamed set it will still need to be iimported using the alternative import unless I can be bothered rewriting again to ensure all is using the oeriginal sheets for phyloseq import
 
