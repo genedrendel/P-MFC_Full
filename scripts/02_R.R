@@ -209,6 +209,71 @@ OBJ_W14_CATHtss <- subset_samples(OBJ1_expCATHtss, Week == "Fourteen")
 
 ##### Table export for agglomerated sheets (i.e if certain taxa level sheets are needed for excel/other programs) ------------------------------------
 
+#for faprotax prevalence filter
+OBJ1 <- prune_taxa(taxa_sums(OBJ1) > 5, OBJ1)
+OBJ1
+
+#write both otu and taxa to csv sheet
+TAX_tab_expo = cbind(data.frame(otu_table(OBJ1_exp_el)), data.frame(tax_table(OBJ1_exp_el)))
+write.csv(TAX_tab_expo,"Family_otu-taxsheet.csv", row.names = TRUE)
+
+
+OTU = as(otu_table(OBJ1_exp_el), "matrix")
+# Coerce to data.frame
+OTU_tab_expo = as.data.frame(OTU)
+write.csv(OTU_tab_expo,"Family_otusheet.csv", row.names = TRUE)
+#write corresponding tax table
+TAX = as(tax_table(OBJ1_exp_el), "matrix")
+TAX_tab_expo = as.data.frame(TAX)
+write.csv(TAX_tab_expo,"Family_taxsheet.csv", row.names = TRUE)
+
+
+TAX_tab_expo = cbind(data.frame(otu_table(OBJ1)), data.frame(tax_table(OBJ1)))
+write.csv(TAX_tab_expo,"Family_taxsheet.csv", row.names = TRUE)
+
+TAX_tab_expo = as(tax_table(OTU), "matrix")
+TAX_tab_expo = as.data.frame(OTU)
+write.csv(TAX_tab_expo,"Family_taxsheet.csv", row.names = TRUE)
+
+
+
+
+#agglomeration at Family for export
+#approx 10 minutes for Family level
+OBJ1_FAM <- tax_glom(OBJ1,taxrank = "Family")
+# Coerce to data.frame
+OTU_tab_FAMexp = as.data.frame(OBJ1_FAM)
+write.csv(OTU_tab_FAMexp,"Family_otusheet.csv", row.names = TRUE)
+#write corresponding tax table
+TAX_tab_FAM = as(tax_table(OBJ1_FAM), "matrix")
+TAX_tab_FAMexp = as.data.frame(TAX_tab_FAM)
+write.csv(TAX_tab_FAMexp,"Family_taxsheet.csv", row.names = TRUE)
+
+#agglomeration at Genus for export
+OBJ1_GEN <- tax_glom(OBJ1,taxrank = "Genus")
+# Coerce to data.frame
+OTU_tab_GENexp = as.data.frame(OBJ1_GEN)
+write.csv(OTU_tab_GENexp,"Genus_otusheet.csv", row.names = TRUE)
+#write corresponding tax table
+TAX_tab_GEN = as(tax_table(OBJ1_GEN), "matrix")
+TAX_tab_GENexp = as.data.frame(TAX_tab_GEN)
+write.csv(TAX_tab_GENexp,"Genus_taxsheet.csv", row.names = TRUE)
+
+
+
+
+#agglomeration at Species for export
+OBJ1_SPE <- tax_glom(OBJ1,taxrank = "Species")
+# Coerce to data.frame
+OTU_tab_SPEexp = as.data.frame(OBJ1_SPE)
+write.csv(OTU_tab_SPEexp,"Genus_otusheet.csv", row.names = TRUE)
+#write corresponding tax table
+TAX_tab_SPE = as(tax_table(OBJ1_SPE), "matrix")
+TAX_tab_SPEexp = as.data.frame(TAX_tab_SPE)
+write.csv(TAX_tab_SPEexp,"Species_taxsheet.csv", row.names = TRUE)
+
+
+
 ##Agglomerate and then export
 #family (if not already done as per above)
 OBJ_W10_conn_FAM <- tax_glom(OBJ_W10_conn,taxrank = "Family")
@@ -243,6 +308,47 @@ plot_richness(OBJ1_exp_el, x = "Week", measures = c("Observed", "Shannon")) +
   geom_boxplot() +
   theme_classic() +
   theme(strip.background = element_blank(), axis.text.x.bottom = element_text(angle = -90))
+
+
+#Alpha div Tables by week and connection
+#TAKE NOTE, has been done with identical object/table name so exports MUST be done sequentially as geenreated otherwise will just overwrite it each time
+#only exported sheets have unique names
+
+#Connected
+#Week 0
+tab <- microbiome::alpha(OBJ_W0_CONN, index = "all")
+kable(head(tab))
+write.csv(tab,"alpha_outputW0CON.csv", row.names = TRUE)
+#Week 6
+tab <- microbiome::alpha(OBJ_W6_CONN, index = "all")
+kable(head(tab))
+write.csv(tab,"alpha_outputW6CON.csv", row.names = TRUE)
+#Week 8
+tab <- microbiome::alpha(OBJ_W6_CONN, index = "all")
+kable(head(tab))
+write.csv(tab,"alpha_outputW8CON.csv", row.names = TRUE)
+#Week 14
+tab <- microbiome::alpha(OBJ_W14_CONN, index = "all")
+kable(head(tab))
+write.csv(tab,"alpha_outputW14CON.csv", row.names = TRUE)
+
+#Unconnected
+#Week 0
+tab <- microbiome::alpha(OBJ_W0_UNCONN, index = "all")
+kable(head(tab))
+write.csv(tab,"alpha_outputW0UN.csv", row.names = TRUE)
+#Week 6
+tab <- microbiome::alpha(OBJ_W6_UNCONN, index = "all")
+kable(head(tab))
+write.csv(tab,"alpha_outputW6UN.csv", row.names = TRUE)
+#Week 8
+tab <- microbiome::alpha(OBJ_W8_UNCONN, index = "all")
+kable(head(tab))
+write.csv(tab,"alpha_outputW8UN.csv", row.names = TRUE)
+#Week 14
+tab <- microbiome::alpha(OBJ_W14_UNCONN, index = "all")
+kable(head(tab))
+write.csv(tab,"alpha_outputW14UN.csv", row.names = TRUE)
 
 estimate_richness(OBJ1_exp_el, split = TRUE, measures = NULL)
 estimate_richness(OBJ1_exp_el, split = FALSE, measures = NULL)
@@ -643,10 +749,10 @@ OverallOrd_U + theme_grey() + theme(text = element_text(size = 14)) + geom_point
 # Week 0 weighted
 Week0_Ord_W <- plot_ordination(OBJ_W0_tss, NMDS_W0_W, color = "Treatment", shape = "Location", label = NULL)
 Week0_Ord_W
-Week0_Ord_W + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#00A700","#808080"))
+Week0_Ord_W + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("green3","#808080"))
 
 #Week 0 - weighted 
-Week0_Ord_W + geom_point(size = 3.5) + xlab("Axis 1") + ylab("Axis 2") + scale_color_manual(values = c("#00A700","#808080")) + theme(
+Week0_Ord_W + stat_ellipse(type = "norm") + geom_point(size = 3.5) + xlab("Axis 1") + ylab("Axis 2") + scale_color_manual(values = c("green3","#808080")) + theme(
   #remove legend (for matching sizes of plots and/or exporting with the aim of combining 2 plots with just one legend for both)
   legend.position = "none",
   # get rid of panel grids
@@ -667,12 +773,13 @@ Week0_Ord_W + geom_point(size = 3.5) + xlab("Axis 1") + ylab("Axis 2") + scale_c
   legend.text = element_text(color = "black")
   )
 
+
 # Week 0 Unweighted
 Week0_Ord_U <- plot_ordination(OBJ_W0_tss, NMDS_W0_U, color = "Treatment", shape = "Location", label = NULL)
 Week0_Ord_U
-Week0_Ord_U + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#00A700","#808080"))
+Week0_Ord_U + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("green3","#808080"))
 
-Week0_Ord_U + geom_point(size = 3.5) + xlab("Axis 1") + ylab("Axis 2") + scale_color_manual(values = c("#00A700","#808080")) + theme(
+Week0_Ord_U  + stat_ellipse(type = "norm") + geom_point(size = 3.5) + xlab("Axis 1") + ylab("Axis 2") + scale_color_manual(values = c("green3","#808080")) + theme(
   #remove legend (for matching sizes of plots and/or exporting with the aim of combining 2 plots with just one legend for both)
   legend.position = "none",
   # get rid of panel grids
@@ -697,9 +804,9 @@ Week0_Ord_U + geom_point(size = 3.5) + xlab("Axis 1") + ylab("Axis 2") + scale_c
 # Week 6 weighted
 Week6_Ord_W <- plot_ordination(OBJ_W6_tss, NMDS_W6_W, color = "Treatment", shape = "Location", label = NULL)
 Week6_Ord_W
-Week6_Ord_W + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#00A700","#808080"))
+Week6_Ord_W + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("green3","#808080"))
 
-Week6_Ord_W + geom_point(size = 3.5) + xlab("Axis 1") + ylab("Axis 2") + scale_color_manual(values = c("#00A700","#808080")) + theme(
+Week6_Ord_W + stat_ellipse(type = "norm") + geom_point(size = 3.5) + xlab("Axis 1") + ylab("Axis 2") + scale_color_manual(values = c("green3","#808080")) + theme(
   #remove legend (for matching sizes of plots and/or exporting with the aim of combining 2 plots with just one legend for both)
   legend.position = "none",
   # get rid of panel grids
@@ -723,9 +830,9 @@ Week6_Ord_W + geom_point(size = 3.5) + xlab("Axis 1") + ylab("Axis 2") + scale_c
 #Week 6 Unweighted
 Week6_Ord_U <- plot_ordination(OBJ_W6_tss, NMDS_W6_U, color = "Treatment", shape = "Location", label = NULL)
 Week6_Ord_U
-Week6_Ord_U + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#00A700","#808080"))
+Week6_Ord_U + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("green3","#808080"))
 
-Week6_Ord_U + geom_point(size = 3.5) + xlab("Axis 1") + ylab("Axis 2") + scale_color_manual(values = c("#00A700","#808080")) + theme(
+Week6_Ord_U  + stat_ellipse(type = "norm") + geom_point(size = 3.5) + xlab("Axis 1") + ylab("Axis 2") + scale_color_manual(values = c("green3","#808080")) + theme(
   #remove legend (for matching sizes of plots and/or exporting with the aim of combining 2 plots with just one legend for both)
   legend.position = "none",
   # get rid of panel grids
@@ -752,9 +859,9 @@ Week6_Ord_U + geom_point(size = 3.5) + xlab("Axis 1") + ylab("Axis 2") + scale_c
 #Week 8 weighted
 Week8_Ord_W <- plot_ordination(OBJ_W8_tss, NMDS_W8_W, color = "Treatment", shape = "Location", label = NULL)
 Week8_Ord_W
-Week8_Ord_W + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#00A700","#808080"))
+Week8_Ord_W + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("green3","#808080"))
 
-Week8_Ord_W + geom_point(size = 3.5) + xlab("Axis 1") + ylab("Axis 2") + scale_color_manual(values = c("#00A700","#808080")) + theme(
+Week8_Ord_W + stat_ellipse(type = "norm") + geom_point(size = 3.5) + xlab("Axis 1") + ylab("Axis 2") + scale_color_manual(values = c("green3","#808080")) + theme(
   #remove legend (for matching sizes of plots and/or exporting with the aim of combining 2 plots with just one legend for both)
   legend.position = "none",
   # get rid of panel grids
@@ -778,9 +885,9 @@ Week8_Ord_W + geom_point(size = 3.5) + xlab("Axis 1") + ylab("Axis 2") + scale_c
 # Week 8 unweighted
 Week8_Ord_U <- plot_ordination(OBJ_W8_tss, NMDS_W8_U, color = "Treatment", shape = "Location", label = NULL)
 Week8_Ord_U
-Week8_Ord_U + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#00A700","#808080"))
+Week8_Ord_U + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("green3","#808080"))
 
-Week8_Ord_U + geom_point(size = 3.5) + xlab("Axis 1") + ylab("Axis 2") + scale_color_manual(values = c("#00A700","#808080")) + theme(
+Week8_Ord_U  + stat_ellipse(type = "norm") + geom_point(size = 3.5) + xlab("Axis 1") + ylab("Axis 2") + scale_color_manual(values = c("green3","#808080")) + theme(
   #remove legend (for matching sizes of plots and/or exporting with the aim of combining 2 plots with just one legend for both)
   legend.position = "none",
   # get rid of panel grids
@@ -807,9 +914,9 @@ Week8_Ord_U + geom_point(size = 3.5) + xlab("Axis 1") + ylab("Axis 2") + scale_c
 #Week 14 weighted
 Week14_Ord_W <- plot_ordination(OBJ_W14_tss, NMDS_W14_W, color = "Treatment", shape = "Location", label = NULL)
 Week14_Ord_W
-Week14_Ord_W + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#00A700","#808080"))
+Week14_Ord_W + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("green3","#808080"))
 
-Week14_Ord_W + geom_point(size = 3.5) + xlab("Axis 1") + ylab("Axis 2") + scale_color_manual(values = c("#00A700","#808080")) + theme(
+Week14_Ord_W + stat_ellipse(type = "norm") + geom_point(size = 3.5) + xlab("Axis 1") + ylab("Axis 2") + scale_color_manual(values = c("green3","#808080")) + theme(
   #remove legend (for matching sizes of plots and/or exporting with the aim of combining 2 plots with just one legend for both)
   legend.position = "none",
   # get rid of panel grids
@@ -833,10 +940,10 @@ Week14_Ord_W + geom_point(size = 3.5) + xlab("Axis 1") + ylab("Axis 2") + scale_
 #week 14 unweighted
 Week14_Ord_U <- plot_ordination(OBJ_W14_tss, NMDS_W14_U, color = "Treatment", shape = "Location", label = NULL)
 Week14_Ord_U
-Week14_Ord_U + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#00A700","#808080"))
+Week14_Ord_U + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("green3","#808080"))
 
 
-Week14_Ord_U + geom_point(size = 3.5) + xlab("Axis 1") + ylab("Axis 2") + scale_color_manual(values = c("#00A700","#808080")) + theme(
+Week14_Ord_U  + stat_ellipse(type = "norm") + geom_point(size = 3.5) + xlab("Axis 1") + ylab("Axis 2") + scale_color_manual(values = c("green3","#808080")) + theme(
   #remove legend (for matching sizes of plots and/or exporting with the aim of combining 2 plots with just one legend for both)
   legend.position = "none",
   # get rid of panel grids
@@ -1158,6 +1265,17 @@ library(data.table)
 factor(sample_data(OBJ1_exp_el)$Week)
 sample_data(OBJ1_exp_el)$Week = factor(sample_data(OBJ1_exp_el)$Week, levels = c("Zero", "Six", "Eight", "Fourteen"))
 
+## differential abundance at family level at end point (electrodes only, as additoinal result alongside venn diagram of patternanalysis overlaps and pattern analysis over time )
+
+output_INO_FAM = ancombc2(data = OBJ_W14, tax_level = "Family" , fix_formula = "Connection + Location", p_adj_method = "holm", prv_cut = 0.05, lib_cut = 0,group = "Connection", 
+              struc_zero = TRUE, neg_lb = TRUE, alpha = 0.05, global = FALSE)
+
+res_prim_INO_FAM = output_INO_FAM$res %>%
+    mutate_if(is.numeric, function(x) round(x, 2))
+res_prim_INO_FAM %>%
+    data.table(caption = "ANCOM-BC2 Primary Results_CONEND_FAM_ed")
+write.csv(res_prim_INO_FAM,"ANCOM-BC2 Primary Results_CONEND_FAM_ed.csv", row.names = TRUE)
+
 #INOCULUM
 #Inoculum at FAMILY controlling for location and connection, uninoculated as baseline
 #differences in inoculation treatment controlling for differences in inoculum? (actually in retrospect dont think ordering actually matters in any way...so use this again for baseline non pattern analysis comaprisons from now on)
@@ -1322,6 +1440,54 @@ res_trend
 write.csv(res_trend,"ANCOM-BC2_Trend_Results_FAM_Connected_increasingwithtime.csv", row.names = TRUE)
 
 
+###################### Venn diagrams for pattern analysis overlaps ------
+
+library(VennDiagram)
+library(readr)
+library(RColorBrewer)
+library(ggVennDiagram)
+
+Venn_list <- read_csv("Venn_list.csv")
+
+CC_dec = Venn_list$CC_dec
+OC_dec = Venn_list$OC_dec
+
+CC_inc = Venn_list$CC_inc
+OC_inc = Venn_list$OC_inc
+
+CC_dec[is.na(CC_dec)] <- ""
+OC_dec[is.na(OC_dec)] <- ""
+CC_inc[is.na(CC_inc)] <- ""
+OC_inc[is.na(OC_inc)] <- ""
+
+VennCol <- brewer.pal(3, "Dark2")
+
+venn.diagram(
+  x = list(CC_dec, OC_dec),
+  category.names = c("Closed circuit decreasing" , "Open circuit decreasing"),
+  filename = 'Decrease_venn_diagramm.png',
+  output = TRUE
+)
+
+library(VennDiagram) 
+venn.diagram(list(B = 1:1800, A = 1571:2020), fill = c("lightblue", "green"), 
+             alpha = c(0.5, 0.5), lwd = 0, "venn_diagram.tiff")
+
+
+
+library(rJava)
+library(venneuler)
+require(venneuler)
+v <- venneuler(c(A = 14, B = 15, "A&B" = 19))
+plot(v)
+
+
+library(ggvenn)
+ggvenn(
+  Venn_list, 
+  fill_color = c("#0073C2FF", "#868686FF"),
+  stroke_size = 0.5, set_name_size = 2
+  )
 
 
 ######################################## deseq -------------------------------------------------------------------
@@ -1331,11 +1497,9 @@ library("DESeq2")
 #Start here if haven't already (use raw vaules, but still subset out bad samples)
 #Agglomerate at desired taxa level (if you want to, otherwise proceed to and will get individual ASV changes)
 
-OBJ_W10_conn_planted_FAM <- tax_glom(OBJ_W10_conn_planted,taxrank = "Family")
+OBJ_W14_conn_FAM <- tax_glom(OBJ1_exp_el,taxrank = "Family")
 ##Import to deseq and order factors to be compared (overall, not agglomerated)
-diagdds = phyloseq_to_deseq2(OBJ_W10_conn_planted_FAM, ~ inoculum) #Re: order of factors here, this would be testing for the effect of location, controlling for connection
-
-diagdds$Location <- relevel(diagdds$inoculum, ref = "a_Uninoculated") # sets the reference point, baseline or control to be compared against
+diagdds = phyloseq_to_deseq2(OBJ1_exp_el, ~ Connection) #Re: order of factors here, this would be testing for the effect of location, controlling for connection
 
 #Because of the way the data is nested between groups need to do some finangling to allow the model to distinguish between them correctly
 #Have added a new column that groups samples by the soil column they were in (without location data, so e.g W14UP4 for all three cathode/anode/root sampeles)
@@ -1346,12 +1510,12 @@ res = results(diagdds, cooksCutoff = FALSE)
 res # print out results
 
 #Bind taxonomy to results
-res = cbind(as(res, "data.frame"), as(tax_table(OBJ_W10_conn_planted_FAM)[rownames(res), ], "matrix"))
+res = cbind(as(res, "data.frame"), as(tax_table(OBJ1_exp_el)[rownames(res), ], "matrix"))
 res
 
 #Export .csv
 write.csv(as.data.frame(res), 
-          file = "DESeq2_FAM.csv")
+          file = "DESeq2_FAM_Elec_Timeseries.csv")
 
 #For Agglomerated
 #Different Comparison Direction Sheets
@@ -3847,7 +4011,7 @@ OBJ1_exp <- subset_samples(OBJ1, Treatment_Half_Trim == "Retain")
 
 
 #Phyloseq to DESEQ for testing location differences (accounting for connection)
-diagdds = phyloseq_to_deseq2(OBJ1_exp, ~ Connection + Location) #Re: order of factors here, this would be testing for the effect of location, controlling for connection
+diagdds = phyloseq_to_deseq2(OBJ_W14, ~ Connection) #Re: order of factors here, this would be testing for the effect of location, controlling for connection
 #e.g for the above ~ Connection + Location , the order of these matters, first one is what is controlled for and second one after the + is one is tested need to double check which is which
 #Controlling for the presence of absence of connection, what was the effect of location
 #run this on everything instead of just the specialists subset, because context of the full dataset is important for this differential abundance 
