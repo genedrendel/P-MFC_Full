@@ -39,7 +39,7 @@ BiocManager::valid()
 
 #Working on a new strategy now to streamline figures/stats between taxa + faprotax + picrust
 #By sequestering each of the taxa/fapro/picrust data sheets in their own folders they can all be named the same "tax_table " raw_readmap" etc
-#And because any comparisons we make with one set we will liukely want to do with the others too  we can just switch working directories instead of duplicating essentially the same code
+#And because any comparisons we make with one set we will likely want to do with the others too  we can just switch working directories instead of duplicating essentially the same code
 
 #one further note, once I get to ancombc, let's also use this strategy plus the level setting argument to fix up and remove the need for an "alternative import" for running ancom with the desired factor ordering
 
@@ -84,6 +84,7 @@ OBJ1 <- OBJ1 %>%
     Class   != "Chloroplast"
   )
 
+
 # Newer analysis sections, re-adapting from 2015 to full time series dataset --------------------------------------
 
 #### old sections will be kept below this section for reference to older script/s
@@ -105,7 +106,7 @@ OBJ1_exp_tss = transform_sample_counts(OBJ1_exp, function(OTU) OTU/sum(OTU) )
 #Due to the way it handles taxa levels/names now.
 #Similarly, when using the concatenated sheet for ancom, don't worry about agglomerating because it can be set at family level itself
 
-#As such, need to be. alittle more careful than usual when importing/subsetting to ensure correct things are being run
+#As such, need to be. a little more careful than usual when importing/subsetting to ensure correct things are being run
 
 ##To reduce need for subsequent subsetting, do overall treatment subsets ONCE now, and then subset by time for each of those plus once for an overall  (as opposed to subsetting weeks out and then having to also do each time point treatments individually)
 #Electrode only subset (because plants only at end point)
@@ -322,11 +323,11 @@ write.csv(tab,"alpha_outputW0CON.csv", row.names = TRUE)
 #Week 6
 tab <- microbiome::alpha(OBJ_W6_CONN, index = "all")
 kable(head(tab))
-write.csv(tab,"alpha_outputW6CON.csv", row.names = TRUE)
+write.csv(tab,"alpha_outputW6CON_re.csv", row.names = TRUE)
 #Week 8
-tab <- microbiome::alpha(OBJ_W6_CONN, index = "all")
+tab <- microbiome::alpha(OBJ_W8_CONN, index = "all")
 kable(head(tab))
-write.csv(tab,"alpha_outputW8CON.csv", row.names = TRUE)
+write.csv(tab,"alpha_outputW8CON_re.csv", row.names = TRUE)
 #Week 14
 tab <- microbiome::alpha(OBJ_W14_CONN, index = "all")
 kable(head(tab))
@@ -1323,15 +1324,15 @@ write.csv(res_global_INO_FAM,"ANCOM-BC2 Global Results_INO_FAM.csv", row.names =
 factor(sample_data(OBJ1_expCONN)$Week)
 sample_data(OBJ1_expCONN)$Week = factor(sample_data(OBJ1_expCONN)$Week, levels = c("Zero", "Six", "Eight", "Fourteen"))
 
+
 #Connected decreasing abundance over time
 output_pattern_DEC = ancombc2(data = OBJ1_expCONN, tax_level = "Family" , fix_formula = "Week", p_adj_method = "holm", prv_cut = 0.1, lib_cut = 0,group = "Week", 
               struc_zero = TRUE, neg_lb = TRUE, alpha = 0.05, global = TRUE, trend = TRUE, trend_control = list(contrast = list(matrix(c(-1, 0, 0, 1, -1, 0, 0, 1, -1), nrow = 3, byrow = TRUE)), node = list(2), solver = "ECOS", B = 10))
 #Export trend analysis
 res_trendD = output_pattern_DEC$res_trend
 res_trendD
-    data.table(caption = "ANCOM-BC2_Trend_Results_DEC")
-write.csv(res_trendD,"ANCOM-BC2_Trend_Results_FAM_decreasingwithtime_CONN.csv", row.names = TRUE)
-
+    data.table(caption = "ANCOM-BC2_Trend_Results_DEC_Arch")
+write.csv(res_trendD,"ANCOM-BC2_Trend_Results_FAM_decreasingwithtime_CONN_Archtest.csv", row.names = TRUE)
 #Connected increasing abundance over time
 output_pattern_INC = ancombc2(data = OBJ1_expCONN, tax_level = "Family" , fix_formula = "Week", p_adj_method = "holm", prv_cut = 0.1, lib_cut = 0,group = "Week", 
               struc_zero = TRUE, neg_lb = TRUE, alpha = 0.05, global = TRUE, trend = TRUE, trend_control = list(contrast = list(matrix(c(1, 0, 0, -1, 1, 0, 0, -1, 1), nrow = 3, byrow = TRUE)), node = list(2), solver = "ECOS", B = 10))
@@ -1339,7 +1340,7 @@ output_pattern_INC = ancombc2(data = OBJ1_expCONN, tax_level = "Family" , fix_fo
 res_trendI = output_pattern_INC$res_trend
 res_trendI
     data.table(caption = "ANCOM-BC2_Trend_Results_INC")
-write.csv(res_trendI,"ANCOM-BC2_Trend_Results_FAM_increasingwithtime_CONN.csv", row.names = TRUE)
+write.csv(res_trendI,"ANCOM-BC2_Trend_Results_FAM_increasingwithtime_CONN_Archtest.csv", row.names = TRUE)
 
 
 #new pattern analysis unconnected over time only
@@ -1363,6 +1364,27 @@ res_trendI = output_pattern_INC$res_trend
 res_trendI
     data.table(caption = "ANCOM-BC2_Trend_Results_INC")
 write.csv(res_trendI,"ANCOM-BC2_Trend_Results_FAM_increasingwithtime_UNCON.csv", row.names = TRUE)
+
+
+#Genus level of unconnected decreases to see whether nitrous oxide denitrifiers pop up
+#Unconnected decreasing in abundance over time
+output_pattern_DEC = ancombc2(data = OBJ1_expUNCON, tax_level = "Genus" , fix_formula = "Week", p_adj_method = "holm", prv_cut = 0.1, lib_cut = 0,group = "Week", 
+              struc_zero = TRUE, neg_lb = TRUE, alpha = 0.05, global = TRUE, trend = TRUE, trend_control = list(contrast = list(matrix(c(-1, 0, 0, 1, -1, 0, 0, 1, -1), nrow = 3, byrow = TRUE)), node = list(2), solver = "ECOS", B = 10))
+#Export trend analysis
+res_trendD = output_pattern_DEC$res_trend
+res_trendD
+    data.table(caption = "ANCOM-BC2_Trend_Results_DEC")
+write.csv(res_trendD,"ANCOM-BC2_Trend_Results_FAM_decreasingwithtime_UNCON_GENUS.csv", row.names = TRUE)
+
+#Unconnected increasing in abundance over time
+output_pattern_INC = ancombc2(data = OBJ1_expUNCON, tax_level = "Genus" , fix_formula = "Week", p_adj_method = "holm", prv_cut = 0.1, lib_cut = 0,group = "Week", 
+              struc_zero = TRUE, neg_lb = TRUE, alpha = 0.05, global = TRUE, trend = TRUE, trend_control = list(contrast = list(matrix(c(1, 0, 0, -1, 1, 0, 0, -1, 1), nrow = 3, byrow = TRUE)), node = list(2), solver = "ECOS", B = 10))
+#Export trend analysis
+res_trendI = output_pattern_INC$res_trend
+res_trendI
+    data.table(caption = "ANCOM-BC2_Trend_Results_INC")
+write.csv(res_trendI,"ANCOM-BC2_Trend_Results_FAM_increasingwithtime_UNCON_GENUS.csv", row.names = TRUE)
+
 
 
 # Older overall pattern analysis starts here:
@@ -2647,15 +2669,15 @@ plot(venn(list_core),
 
 ##make a new object (Div) containing sample information and alpha diversity estimates
 
-r <- estimate_richness(OBJ1_ts_rounded)#extract the alpha diversity values
-e <- evenness(OBJ1_ts_rounded, index = "all", zeroes = TRUE)#extract evenness values
-treat <- sample_data(OBJ1_ts_rounded)#extract the OBJ1_r treatment file
+r <- estimate_richness(OBJ1_exp_el)#extract the alpha diversity values
+e <- evenness(OBJ1_exp_el, index = "all", zeroes = TRUE)#extract evenness values
+treat <- sample_data(OBJ1_exp_el)#extract the OBJ1_r treatment file
 Div <- cbind(treat,r,e)
 
 ##repeat the below tests for each diversity metric you are interested in
 
 help(shapiro.test)
-shapiro.test(Div$Chao1)
+shapiro.test(Div$Shannon)
 ##test for normality
 ##if p < 0.05 reject null hyp that "samples are normally distributed"
 ##if not normal dist. use kruskal test
@@ -2663,7 +2685,7 @@ shapiro.test(Div$Chao1)
 ##result: p > 0.05 for Shannon and Chao1, but not Simpson
 
 help(bartlett.test)
-bartlett.test(Simpson~Location, Div)
+bartlett.test(Shannon~Connection, Div)
 ##test for homegeneity of varience
 ##if p < 0.05 reject null hyp that "varience is the same"
 ##if varience is different use kruskal test
@@ -2671,7 +2693,7 @@ bartlett.test(Simpson~Location, Div)
 ## result: p > 0.05 for Chao1, Shannon and Simpson
 
 ##example ANOVA with post hoc test #parametric
-ANOVA1 <- aov(Div$Shannon ~ Div$Location * Div$Connection)
+ANOVA1 <- aov(Div$Shannon ~ Div$Connection * Div$Week)
 summary(ANOVA1)
 
 ANOVA1 <- aov(Div$Shannon ~ Div$Location)
@@ -2714,6 +2736,13 @@ text( c(1:nlevels(Div$Group)) , a$stats[nrow(a$stats),] + over , LABELS[,1]  , c
 
 ##example Kruskal wallis with post hoc test
 kruskal.test(Shannon ~ Location, Div)
+
+
+##example ANOVA with post hoc test #parametric
+Krusk1 <- kruskal.test(Shannon ~ Connection, Div)
+kruskal.test(Shannon ~ Connection, Div)
+kruskal.test(Shannon ~ Week, Div)
+summary(Krusk1)
 
 library(FSA)
 PT = dunnTest(Shannon ~ Location, data = Div, method = "bh")
