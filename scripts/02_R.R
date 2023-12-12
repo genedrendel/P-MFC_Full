@@ -666,6 +666,72 @@ p.shannon <- p.shannon + theme_minimal() +
         legend.title = element_text(size = 16))
 p.shannon
 
+############ normaliy and anova / kruskal  etc ------
+
+##we need to know if data meets normailtiy and homogeneity of varience assumptions
+##so we can decide how to test for statistical differences
+
+##make a new object (Div) containing sample information and alpha diversity estimates
+
+r <- estimate_richness(OBJ1_exp_el)#extract the alpha diversity values
+e <- evenness(OBJ1_exp_el, index = "all", zeroes = TRUE)#extract evenness values
+treat <- sample_data(OBJ1_exp_el)#extract the OBJ1_r treatment file
+Div <- cbind(treat,r,e)
+
+##repeat the below tests for each diversity metric you are interested in
+
+help(shapiro.test)
+shapiro.test(Div$Shannon)
+##test for normality
+##if p < 0.05 reject null hyp that "samples are normally distributed"
+##if not normal dist. use kruskal test
+##if data is from normal distribution use anova
+##result: p > 0.05 for Shannon and Chao1, but not Simpson
+
+help(bartlett.test)
+bartlett.test(Shannon~Connection, Div)
+##test for homegeneity of varience
+##if p < 0.05 reject null hyp that "varience is the same"
+##if varience is different use kruskal test
+##if varience is same use anova
+## result: p > 0.05 for Chao1, Shannon and Simpson
+
+##example ANOVA with post hoc test #parametric
+ANOVA1 <- aov(Div$Shannon ~ Div$Connection * Div$Week)
+summary(ANOVA1)
+
+ANOVA1 <- aov(Div$Shannon ~ Div$Location)
+summary(ANOVA1)
+
+
+##example Kruskal wallis with post hoc test
+kruskal.test(Shannon ~ Location, Div)
+
+
+##example ANOVA with post hoc test #parametric
+Krusk1 <- kruskal.test(Shannon ~ Connection, Div)
+kruskal.test(Shannon ~ Connection, Div)
+kruskal.test(Shannon ~ Week, Div)
+summary(Krusk1)
+
+library(FSA)
+PT = dunnTest(Shannon ~ Location, data = Div, method = "bh")
+PT
+
+
+### and version 2 for comparing the sheet I already have detaileing div metrics for paper 3
+div_metrics <- read.csv("diversity_metrics.csv", header = TRUE)
+glimpse(div_metrics)
+anova_one_way <- aov(chao1~connection, data = div_metrics)
+summary(anova_one_way)
+
+#same test comparisons but kruakl instead
+Krusk1 <- kruskal.test(shannon ~ connection, div_metrics)
+Krusk1
+
+kruskal.test(shannon ~ connection, div_metrics)
+kruskal.test(shannon ~ week, div_metrics)
+
 
 ###### nMDS --------------------------------------------------------------------
 #remember to specify tss datasets
@@ -2698,6 +2764,22 @@ summary(ANOVA1)
 
 ANOVA1 <- aov(Div$Shannon ~ Div$Location)
 summary(ANOVA1)
+
+
+##example Kruskal wallis with post hoc test
+kruskal.test(Shannon ~ Location, Div)
+
+
+##example ANOVA with post hoc test #parametric
+Krusk1 <- kruskal.test(Shannon ~ Connection, Div)
+kruskal.test(Shannon ~ Connection, Div)
+kruskal.test(Shannon ~ Week, Div)
+summary(Krusk1)
+
+library(FSA)
+PT = dunnTest(Shannon ~ Location, data = Div, method = "bh")
+PT
+
 
 TUKEY <- TukeyHSD(ANOVA1,'Div$Location', conf.level = 0.95)
 TUKEY
